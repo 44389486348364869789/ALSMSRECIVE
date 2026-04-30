@@ -11,5 +11,7 @@ data class PendingMessage(
     val type: String,
     val sender: String,
     val message: String,
-    val token: String // মেসেজটি কোন ইউজারের তা পাঠানোর জন্য টোকেন সেভ করা জরুরি
+    val token: String, // মেসেজটি কোন ইউজারের তা পাঠানোর জন্য টোকেন সেভ করা জরুরি
+    val deviceId: String = "unknown",
+    val deviceName: String = "Unknown Device"
 )

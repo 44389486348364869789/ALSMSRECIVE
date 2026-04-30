@@ -30,6 +30,9 @@ class SessionManager(context: Context) {
         private const val LOGIN_PASSWORD = "login_password"
 
         private const val SELECTED_APP_PACKAGES = "selected_app_packages"
+        private const val DEVICE_ID = "device_id"
+        private const val DEVICE_NAME = "device_name"
+        private const val TELEGRAM_FORWARDING_ENABLED = "telegram_forwarding_enabled"
     }
 
     // --- টোকেন ম্যানেজমেন্ট ---
@@ -143,4 +146,29 @@ class SessionManager(context: Context) {
         return sharedPreferences.getStringSet(SELECTED_APP_PACKAGES, emptySet()) ?: emptySet()
     }
     // ---------------------------------------------------
+
+    // --- Device Info ---
+    fun saveDeviceInfo(deviceId: String, deviceName: String) {
+        sharedPreferences.edit()
+            .putString(DEVICE_ID, deviceId)
+            .putString(DEVICE_NAME, deviceName)
+            .apply()
+    }
+
+    fun getDeviceId(): String {
+        return sharedPreferences.getString(DEVICE_ID, "unknown") ?: "unknown"
+    }
+
+    fun getDeviceName(): String {
+        return sharedPreferences.getString(DEVICE_NAME, "Unknown Device") ?: "Unknown Device"
+    }
+
+    // --- Telegram Forwarding Toggle ---
+    fun setTelegramForwardingEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean(TELEGRAM_FORWARDING_ENABLED, enabled).apply()
+    }
+
+    fun isTelegramForwardingEnabled(): Boolean {
+        return sharedPreferences.getBoolean(TELEGRAM_FORWARDING_ENABLED, true) // Default true
+    }
 }

@@ -10,5 +10,7 @@ data class MessageResponse(
     val type: String?,
     val sender: String?,
     val message: String?,
+    val deviceId: String?,
+    val deviceName: String?,
     val timestamp: String
 )

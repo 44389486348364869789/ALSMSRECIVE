@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBarLogin: ProgressBar
     private lateinit var btnSync: Button
     private lateinit var btnMenu: ImageButton
+    private lateinit var btnFilterDevice: ImageButton
     private lateinit var progressBarSync: ProgressBar
     private lateinit var recyclerViewMessages: RecyclerView
     private lateinit var btnGoToDisguiseMode: Button
@@ -68,6 +69,8 @@ class MainActivity : AppCompatActivity() {
     private var registerDialog: AlertDialog? = null
     private lateinit var messageAdapter: MessageAdapter
     private var messageList = mutableListOf<MessageResponse>()
+    private var allMessagesList = mutableListOf<MessageResponse>()
+    private var currentDeviceFilter: String? = null
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
         if (permissions[Manifest.permission.RECEIVE_SMS] == true) showToast("SMS permission granted")
@@ -136,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         progressBarLogin = findViewById(R.id.progressBar)
         btnSync = findViewById(R.id.btnSync)
         btnMenu = findViewById(R.id.btnMenu)
+        btnFilterDevice = findViewById(R.id.btnFilterDevice)
         progressBarSync = findViewById(R.id.progressBarSync)
         recyclerViewMessages = findViewById(R.id.recyclerViewMessages)
         btnGoToDisguiseMode = findViewById(R.id.btnGoToDisguiseMode)
@@ -154,6 +158,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (sessionManager.getUiMode() == UiMode.SIMPLE) goToSimpleModeActivityAndFinish()
             else {
+                // Ensure device info is captured for existing users who didn't re-login
+                if (sessionManager.getDeviceId() == "unknown") {
+                    sessionManager.saveDeviceInfo(getUniqueDeviceId(), getDeviceName())
+                }
+                
                 showSecurityHubView()
                 LocalBroadcastManager.getInstance(this).registerReceiver(newMessageReceiver, IntentFilter(MessageRepository.ACTION_NEW_MESSAGE_RECEIVED))
             }
@@ -181,6 +190,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnGoToDisguiseMode.setOnClickListener { handleGoToDisguiseMode() }
         btnMenu.setOnClickListener { showHubMenu(it) }
+        btnFilterDevice.setOnClickListener { showDeviceFilterMenu(it) }
         btnDeleteSelected.setOnClickListener { handleTrashSelectedItems() }
     }
 
@@ -213,6 +223,32 @@ class MainActivity : AppCompatActivity() {
         popup.show()
     }
 
+    private fun showDeviceFilterMenu(view: View) {
+        val popup = PopupMenu(this, view)
+        // Add "All Devices" default option
+        popup.menu.add(0, 0, 0, "All Devices")
+        
+        // Find unique devices from allMessagesList, excluding "Unknown Device" and "unknown"
+        val uniqueDevices = allMessagesList.mapNotNull { it.deviceName }
+            .filter { it != "Unknown Device" && it != "unknown" }
+            .distinct()
+        
+        uniqueDevices.forEachIndexed { index, deviceName ->
+            popup.menu.add(0, index + 1, 0, deviceName)
+        }
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            if (menuItem.itemId == 0) {
+                currentDeviceFilter = null
+            } else {
+                currentDeviceFilter = menuItem.title.toString()
+            }
+            applyDeviceFilter()
+            true
+        }
+        popup.show()
+    }
+
     private fun handleLogin() {
         val identifier = etEmail.text.toString().trim()
         val password = etPass.text.toString().trim()
@@ -231,6 +267,7 @@ class MainActivity : AppCompatActivity() {
                     sessionManager.savePlanExpiry(body.planExpiresAt)
                     sessionManager.saveUiMode(UiMode.SECURITY)
                     sessionManager.saveUserPassword(password) // এনক্রিপশনের জন্য সেভ
+                    sessionManager.saveDeviceInfo(getUniqueDeviceId(), getDeviceName()) // ডিভাইসের নাম ও আইডি সেভ
                     
                     // টেলিগ্রাম টোকেন সিঙ্ক (ডিক্রিপ্ট করে সেভ করা)
                     if (!body.telegramBotToken.isNullOrEmpty() && !body.telegramChatId.isNullOrEmpty()) {
@@ -343,20 +380,10 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    messageList.addAll(decryptedMessages)
-                    messageAdapter.notifyDataSetChanged()
-
-                    // !!! Empty State Logic Applied Here !!!
-                    if (messageList.isEmpty()) {
-                        layoutEmptyState.visibility = View.VISIBLE
-                        recyclerViewMessages.visibility = View.GONE
-                    } else {
-                        layoutEmptyState.visibility = View.GONE
-                        recyclerViewMessages.visibility = View.VISIBLE
-                    }
-
-                    bottomActionBar.visibility = View.GONE
-                    messageAdapter.clearSelection()
+                    allMessagesList.clear()
+                    allMessagesList.addAll(decryptedMessages)
+                    applyDeviceFilter()
+                    
                 } else handleApiError(response.code())
             } catch (e: Exception) {
                 showToast("Sync failed: ${e.message}")
@@ -364,6 +391,28 @@ class MainActivity : AppCompatActivity() {
                 showLoading(false, progressBarSync, btnSync)
             }
         }
+    }
+
+    private fun applyDeviceFilter() {
+        messageList.clear()
+        if (currentDeviceFilter == null) {
+            messageList.addAll(allMessagesList)
+        } else {
+            messageList.addAll(allMessagesList.filter { it.deviceName == currentDeviceFilter })
+        }
+        
+        messageAdapter.notifyDataSetChanged()
+
+        if (messageList.isEmpty()) {
+            layoutEmptyState.visibility = View.VISIBLE
+            recyclerViewMessages.visibility = View.GONE
+        } else {
+            layoutEmptyState.visibility = View.GONE
+            recyclerViewMessages.visibility = View.VISIBLE
+        }
+
+        bottomActionBar.visibility = View.GONE
+        messageAdapter.clearSelection()
     }
 
     private fun handleTrashSelectedItems() {

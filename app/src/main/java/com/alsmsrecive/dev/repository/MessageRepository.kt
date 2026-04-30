@@ -62,7 +62,9 @@ object MessageRepository {
                     type = type,
                     sender = encryptedSender,
                     message = encryptedMessage,
-                    token = token
+                    token = token,
+                    deviceId = sessionManager.getDeviceId(),
+                    deviceName = sessionManager.getDeviceName()
                 )
                 db.pendingMessageDao().insertMessage(pendingMessage)
                 Log.d("MessageRepo", "Message saved locally to Room database.")

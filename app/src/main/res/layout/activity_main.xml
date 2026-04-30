@@ -215,6 +215,15 @@
                             android:textColor="@color/white"/>
 
                         <ImageButton
+                            android:id="@+id/btnFilterDevice"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_filter"
+                            app:tint="@color/white" />
+
+                        <ImageButton
                             android:id="@+id/btnMenu"
                             android:layout_width="48dp"
                             android:layout_height="48dp"

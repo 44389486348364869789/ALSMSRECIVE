@@ -45,6 +45,8 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     sender: String,
     message: String,
+    deviceId: { type: String, default: "unknown" },
+    deviceName: { type: String, default: "Unknown Device" },
     timestamp: { type: Date, default: Date.now },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date }

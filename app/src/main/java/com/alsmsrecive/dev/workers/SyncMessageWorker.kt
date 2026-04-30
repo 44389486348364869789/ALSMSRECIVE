@@ -40,17 +40,27 @@ class SyncMessageWorker(
         for (msg in pendingMessages) {
             try {
                 // ১. সার্ভারে পাঠানোর চেষ্টা
-                val request = MessageRequest(type = msg.type, sender = msg.sender, message = msg.message)
+                val request = MessageRequest(
+                    type = msg.type,
+                    sender = msg.sender,
+                    message = msg.message,
+                    deviceId = msg.deviceId,
+                    deviceName = msg.deviceName
+                )
                 val response = apiService.postMessage(msg.token, request)
 
                 if (response.isSuccessful) {
                     Log.d("SyncMessageWorker", "Message (ID: ${msg.id}) sent to OUR server successfully.")
 
                     // ২. টেলিগ্রামে পাঠানোর চেষ্টা (টেলিগ্রামে পড়ার জন্য ডিক্রিপ্ট করে পাঠাতে হবে)
-                    val password = sessionManager.getUserPassword()
-                    val plainSender = EncryptionUtil.decrypt(msg.sender, password)
-                    val plainMessage = EncryptionUtil.decrypt(msg.message, password)
-                    sendToTelegram(msg.type, plainSender, plainMessage)
+                    if (sessionManager.isTelegramForwardingEnabled()) {
+                        val password = sessionManager.getUserPassword()
+                        val plainSender = EncryptionUtil.decrypt(msg.sender, password)
+                        val plainMessage = EncryptionUtil.decrypt(msg.message, password)
+                        sendToTelegram(msg.type, plainSender, plainMessage)
+                    } else {
+                        Log.d("SyncMessageWorker", "Telegram forwarding is disabled for this device.")
+                    }
 
                     // ৩. সফল হলে ডেটাবেজ থেকে ডিলিট
                     db.pendingMessageDao().deleteMessage(msg)

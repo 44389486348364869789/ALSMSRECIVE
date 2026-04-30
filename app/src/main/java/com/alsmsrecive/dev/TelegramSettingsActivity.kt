@@ -21,6 +21,7 @@ class TelegramSettingsActivity : AppCompatActivity() {
     private lateinit var btnSaveTelegram: Button
     private lateinit var btnClearTelegram: Button
     private lateinit var btnTelegramBack: ImageButton
+    private lateinit var switchTelegramSync: androidx.appcompat.widget.SwitchCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,7 @@ class TelegramSettingsActivity : AppCompatActivity() {
         btnSaveTelegram = findViewById(R.id.btnSaveTelegram)
         btnClearTelegram = findViewById(R.id.btnClearTelegram)
         btnTelegramBack = findViewById(R.id.btnTelegramBack)
+        switchTelegramSync = findViewById(R.id.switchTelegramSync)
 
         // সেভ করা ডেটা লোড করুন
         loadSavedCredentials()
@@ -55,6 +57,7 @@ class TelegramSettingsActivity : AppCompatActivity() {
     private fun loadSavedCredentials() {
         etBotToken.setText(sessionManager.getTelegramBotToken())
         etChatId.setText(sessionManager.getTelegramChatId())
+        switchTelegramSync.isChecked = sessionManager.isTelegramForwardingEnabled()
     }
 
     private fun handleSaveTelegramCredentials() {
@@ -68,6 +71,7 @@ class TelegramSettingsActivity : AppCompatActivity() {
 
         // 1. Save Locally
         sessionManager.saveTelegramCredentials(botToken, chatId)
+        sessionManager.setTelegramForwardingEnabled(switchTelegramSync.isChecked)
 
         // 2. Encrypt and save to Server
         val token = sessionManager.getAuthToken()
