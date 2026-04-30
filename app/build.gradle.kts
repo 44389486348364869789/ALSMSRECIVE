@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.alsmsrecive"
+    namespace = "com.alsmsrecive.dev"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.alsmsrecive"
+        applicationId = "com.alsmsrecive.dev"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
