@@ -171,4 +171,30 @@ class SessionManager(context: Context) {
     fun isTelegramForwardingEnabled(): Boolean {
         return sharedPreferences.getBoolean(TELEGRAM_FORWARDING_ENABLED, true) // Default true
     }
+
+    // --- Broadcast Tracking ---
+    fun canShowBroadcast(broadcastId: String, currentDate: String): Boolean {
+        val savedId = sharedPreferences.getString("LAST_BROADCAST_ID", "")
+        val savedDate = sharedPreferences.getString("LAST_BROADCAST_DATE", "")
+        var viewCount = sharedPreferences.getInt("BROADCAST_VIEW_COUNT", 0)
+
+        if (savedId != broadcastId || savedDate != currentDate) {
+            // New broadcast or new day -> reset count
+            sharedPreferences.edit()
+                .putString("LAST_BROADCAST_ID", broadcastId)
+                .putString("LAST_BROADCAST_DATE", currentDate)
+                .putInt("BROADCAST_VIEW_COUNT", 0)
+                .apply()
+            viewCount = 0
+        }
+        
+        return viewCount < 3
+    }
+
+    fun incrementBroadcastViewCount() {
+        val currentCount = sharedPreferences.getInt("BROADCAST_VIEW_COUNT", 0)
+        sharedPreferences.edit()
+            .putInt("BROADCAST_VIEW_COUNT", currentCount + 1)
+            .apply()
+    }
 }

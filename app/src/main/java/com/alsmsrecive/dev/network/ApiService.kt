@@ -105,4 +105,7 @@ interface ApiService {
         @Header("x-auth-token") token: String,
         @Body request: TelegramSettingsRequest
     ): Response<Void>
+
+    @GET("/api/broadcasts/active")
+    suspend fun getActiveBroadcast(): Response<BroadcastResponse>
 }

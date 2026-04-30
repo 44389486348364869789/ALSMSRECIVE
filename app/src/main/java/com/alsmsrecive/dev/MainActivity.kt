@@ -15,10 +15,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -93,6 +95,7 @@ class MainActivity : AppCompatActivity() {
         sessionManager = SessionManager(applicationContext)
         bindViews()
         checkTokenAndSetupViews()
+        fetchActiveBroadcast()
     }
 
     override fun onResume() {
@@ -439,6 +442,67 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) { showToast("Error") } finally { showLoading(false, progressBarSync, btnSync) }
         }
+    }
+
+    private fun fetchActiveBroadcast() {
+        lifecycleScope.launch {
+            try {
+                val response = apiService.getActiveBroadcast()
+                if (response.isSuccessful && response.body() != null) {
+                    val broadcast = response.body()!!
+                    val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                    
+                    if (sessionManager.canShowBroadcast(broadcast._id, currentDate)) {
+                        showBroadcastDialog(broadcast)
+                        sessionManager.incrementBroadcastViewCount()
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore silent failure for broadcast
+            }
+        }
+    }
+
+    private fun showBroadcastDialog(broadcast: com.alsmsrecive.dev.network.models.BroadcastResponse) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_broadcast, null)
+        val ivBroadcastImage = dialogView.findViewById<ImageView>(R.id.ivBroadcastImage)
+        val tvBroadcastTitle = dialogView.findViewById<TextView>(R.id.tvBroadcastTitle)
+        val tvBroadcastMessage = dialogView.findViewById<TextView>(R.id.tvBroadcastMessage)
+        
+        tvBroadcastTitle.text = broadcast.title
+        tvBroadcastMessage.text = broadcast.message
+        
+        if (!broadcast.imageUrl.isNullOrEmpty()) {
+            ivBroadcastImage.visibility = View.VISIBLE
+            Glide.with(this)
+                .load(broadcast.imageUrl)
+                .centerCrop()
+                .into(ivBroadcastImage)
+        } else {
+            ivBroadcastImage.visibility = View.GONE
+        }
+
+        val builder = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            
+        if (!broadcast.link.isNullOrEmpty()) {
+            val btnText = if (!broadcast.linkText.isNullOrEmpty()) broadcast.linkText else "Open Link"
+            builder.setPositiveButton(btnText) { dialog, _ ->
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(broadcast.link))
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    showToast("Cannot open link")
+                }
+                dialog.dismiss()
+            }
+            builder.setNegativeButton("Close") { dialog, _ -> dialog.dismiss() }
+        } else {
+            builder.setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
+        }
+        
+        builder.show()
     }
 
     private fun hasSmsPermission() = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED

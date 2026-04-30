@@ -74,6 +74,17 @@ const ArchivedMessageSchema = new mongoose.Schema({
 });
 const ArchivedMessage = mongoose.model('ArchivedMessage', ArchivedMessageSchema);
 
+const BroadcastSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    imageUrl: { type: String, default: "" },
+    link: { type: String, default: "" },
+    linkText: { type: String, default: "View Details" },
+    isActive: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now }
+});
+const Broadcast = mongoose.model('Broadcast', BroadcastSchema);
+
 
 // --- ২. মিডলওয়্যার (API রুটের আগেই থাকতে হবে) ---
 
@@ -111,6 +122,41 @@ const adminAuthMiddleware = (req, res, next) => {
 
 
 // --- ৩. API Routes ---
+
+// Broadcast Routes
+app.get('/api/broadcasts/active', async (req, res) => {
+    try {
+        const broadcast = await Broadcast.findOne({ isActive: true }).sort({ createdAt: -1 });
+        res.json(broadcast);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/api/broadcasts', [authMiddleware, adminAuthMiddleware], async (req, res) => {
+    try {
+        const { title, message, imageUrl, link, linkText } = req.body;
+        
+        // Mark existing broadcasts as inactive
+        await Broadcast.updateMany({}, { isActive: false });
+
+        const newBroadcast = new Broadcast({
+            title,
+            message,
+            imageUrl,
+            link,
+            linkText,
+            isActive: true
+        });
+
+        const savedBroadcast = await newBroadcast.save();
+        res.json(savedBroadcast);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 // Login Route (Fix: includes crash fix)
 app.post('/api/login', async (req, res) => {
