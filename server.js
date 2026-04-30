@@ -152,6 +152,10 @@ const adminAuthMiddleware = (req, res, next) => {
 
 // Webhook for receiving SMS from the external app
 app.post('/api/webhook/sms', async (req, res) => {
+    console.log("\n--- [WEBHOOK] INCOMING SMS DATA ---");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+    
     try {
         // The external app sends structured JSON data directly
         const { secret_key, amount, trx_id, provider, sender } = req.body;
