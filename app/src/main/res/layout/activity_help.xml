@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fitsSystemWindows="true"
+    tools:context=".HelpActivity">
+
+    <RelativeLayout
+        android:id="@+id/rlHelpTitleBar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary">
+        <ImageButton
+            android:id="@+id/btnHelpBack"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_arrow_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:padding="12dp"/>
+        <TextView
+            android:id="@+id/tvHelpTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Help &amp; Guide"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/btnHelpBack"
+            android:layout_marginStart="16dp"/>
+        <Button
+            android:id="@+id/btnLangToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="বাংলা দেখুন"
+            android:textColor="?attr/colorOnPrimary"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"/>
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/rlHelpTitleBar">
+
+        <LinearLayout
+            android:id="@+id/mainContentLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvHelpIntroTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="How This App Works"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="22sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/tvHelpIntroDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="This app ('AL CLOCK') has two modes: a 'World Clock' disguise and a 'Security Hub'. Here’s how to use it:"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:textSize="16sp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpDisguiseTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. The Disguise Mode (World Clock)"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpDisguiseDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="When you are logged out, the app appears as a simple 'World Clock'. To access the real login page, you must long-press (press and hold) the 'World Clock' title bar."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="8dp"/>
+            <ImageView
+                android:id="@+id/imgGuide1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpHubTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2. The Security Hub (Main App)"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpHubDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="After logging in, you enter the Security Hub. This is your control center where all your synced data appears. From the Menu (☰), you must grant permissions for the app to work."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="8dp"/>
+
+            <ImageView
+                android:id="@+id/imgGuideHub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpPermissionsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3. Enabling Permissions"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpPermissionsDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="The app CANNOT read any data until you manually grant permissions from the menu:\n\n• Enable SMS Permission: Allows the app to read new SMS messages.\n\n• Enable Notification Access: Allows the app to read notifications from other apps.\n\n• Enable Call Log Sync: Allows the app to read your call history."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="8dp"/>
+            <ImageView
+                android:id="@+id/imgGuidePermissions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpTelegramTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4. How to Get Telegram Alerts"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpTelegramDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="To get real-time alerts on Telegram, you must provide your Bot Token and Chat ID.\n\n1. Go to Menu > Telegram Settings.\n2. Follow the on-screen instructions to get your credentials from BotFather and userinfobot.\n3. Save the credentials. The app will now forward all new data to your Telegram account."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="8dp"/>
+            <ImageView
+                android:id="@+id/imgGuide2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpAppsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5. Selecting Apps for Notifications"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpAppsDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="The app won't capture all notifications by default. You must tell it which apps to watch:\n\n1. After enabling Notification Access, go to Menu > Select Apps for Notification.\n2. Check the apps (like WhatsApp, Messenger) you want to monitor and press 'Save'."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="8dp"/>
+
+            <ImageView
+                android:id="@+id/imgGuideApps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvHelpTrashTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6. Restoring &amp; Deleting"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"/>
+            <TextView
+                android:id="@+id/tvHelpTrashDesc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Messages deleted from the Security Hub are moved to the Trash (Menu > View Trash). From here, you can restore them or delete them forever."
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:lineSpacingExtra="4.0dip"
+                android:layout_marginTop="8dp"/>
+            <ImageView
+                android:id="@+id/imgGuideTrash"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ic_launcher_background"
+                android:scaleType="fitCenter"
+                android:visibility="visible"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:id="@+id/legal_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="24dp"
+                android:background="?attr/colorSurfaceVariant"
+                android:padding="16dp">
+                <TextView
+                    android:id="@+id/tvTerms"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Terms &amp; Conditions"
+                    android:textColor="?attr/colorPrimary"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"/>
+                <TextView
+                    android:id="@+id/tvPrivacy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Privacy Policy"
+                    android:textColor="?attr/colorPrimary"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvHelpContactTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Contact &amp; Support"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp"/>
+            <Button
+                android:id="@+id/btnWhatsApp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Contact on WhatsApp (01981475404)"
+                android:backgroundTint="@color/green"
+                android:textColor="@color/white"
+                android:layout_marginTop="16dp"/>
+            <Button
+                android:id="@+id/btnWebsite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Visit Website (lolvaialamin.site)"
+                style="?attr/materialButtonOutlinedStyle"
+                app:strokeColor="?attr/colorPrimary"
+                android:textColor="?attr/colorPrimary"
+                android:layout_marginTop="8dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

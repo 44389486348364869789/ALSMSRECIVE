@@ -1,0 +1,14 @@
+// network/models/MessageResponse.kt
+package com.example.alsmsrecive.network.models
+
+import com.google.gson.annotations.SerializedName
+
+data class MessageResponse(
+    @SerializedName("_id")
+    val id: String,
+    val userId: String,
+    val type: String,
+    val sender: String,
+    val message: String,
+    val timestamp: String
+)

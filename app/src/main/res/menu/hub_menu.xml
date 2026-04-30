@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_sms_perm"
+        android:title="SMS Permission"
+        android:icon="@android:drawable/ic_menu_send" />
+
+    <item
+        android:id="@+id/menu_notif_perm"
+        android:title="Notification Permission"
+        android:icon="@android:drawable/ic_popup_reminder" />
+
+    <item
+        android:id="@+id/menu_call_log_perm"
+        android:title="Sync Call Logs"
+        android:icon="@android:drawable/ic_menu_call" />
+
+    <item
+        android:id="@+id/menu_telegram_settings"
+        android:title="Telegram Settings"
+        android:icon="@android:drawable/ic_menu_share" />
+
+    <item
+        android:id="@+id/menu_select_apps"
+        android:title="Select Apps for Notification"
+        android:icon="@android:drawable/ic_menu_sort_by_size" />
+
+    <item
+        android:id="@+id/menu_background_run"
+        android:title="Always Run Background"
+        android:icon="@android:drawable/ic_menu_manage" />
+
+    <item
+        android:id="@+id/menu_trash"
+        android:title="Deleted Items (Trash)"
+        android:icon="@android:drawable/ic_menu_delete" />
+
+    <item
+        android:id="@+id/menu_clear_all"
+        android:title="Move All to Trash"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel" />
+
+    <item android:id="@+id/menu_plan"
+        android:title="My Plan / Premium"
+        android:icon="@drawable/ic_star"/>
+
+    <item
+        android:id="@+id/menu_help"
+        android:title="Help &amp; Guide"
+        android:icon="@android:drawable/ic_menu_help" />
+
+    <item
+        android:id="@+id/menu_logout"
+        android:title="Logout"
+        android:icon="@android:drawable/ic_lock_power_off" />
+</menu>

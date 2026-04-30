@@ -1,0 +1,36 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.ALSMSRECIVE" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/purple_200</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_200</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <item name="android:statusBarColor">@color/purple_500</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="M">false</item>
+
+        <item name="android:colorBackground">@color/dark_background</item>
+
+        <item name="colorSurface">@color/dark_surface</item>
+
+        <item name="colorSurfaceVariant">@color/dark_stroke</item>
+
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary_dark</item>
+    </style>
+
+    <style name="Theme.ALSMSRECIVE.NoActionBar" parent="Theme.ALSMSRECIVE">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor">@color/purple_500</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="M">false</item>
+    </style>
+
+    <style name="Theme.ALSMSRECIVE.SimpleMode" parent="Theme.ALSMSRECIVE.NoActionBar">
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="M">false</item>
+    </style>
+
+</resources>
