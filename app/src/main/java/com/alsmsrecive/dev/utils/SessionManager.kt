@@ -27,7 +27,7 @@ class SessionManager(context: Context) {
         private const val TELEGRAM_CHAT_ID = "telegram_chat_id"
         private const val USER_EMAIL = "user_email"
         private const val PLAN_EXPIRY = "plan_expiry"
-
+        private const val LOGIN_PASSWORD = "login_password"
 
         private const val SELECTED_APP_PACKAGES = "selected_app_packages"
     }
@@ -68,7 +68,17 @@ class SessionManager(context: Context) {
             .remove(TELEGRAM_BOT_TOKEN)
             .remove(TELEGRAM_CHAT_ID)
             .remove(SELECTED_APP_PACKAGES) // <-- এটিও ক্লিয়ার করুন
+            .remove(LOGIN_PASSWORD) // পাসওয়ার্ড মুছে ফেলা
             .apply()
+    }
+
+    // --- এনক্রিপশন পাসওয়ার্ড ---
+    fun saveUserPassword(password: String) {
+        sharedPreferences.edit().putString(LOGIN_PASSWORD, password).apply()
+    }
+
+    fun getUserPassword(): String? {
+        return sharedPreferences.getString(LOGIN_PASSWORD, null)
     }
 
     fun saveUserEmail(email: String) {

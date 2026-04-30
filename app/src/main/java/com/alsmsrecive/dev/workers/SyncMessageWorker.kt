@@ -10,6 +10,7 @@ import com.alsmsrecive.dev.network.ApiClient
 import com.alsmsrecive.dev.network.TelegramApiClient
 import com.alsmsrecive.dev.network.models.MessageRequest
 import com.alsmsrecive.dev.utils.SessionManager
+import com.alsmsrecive.dev.utils.EncryptionUtil
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -45,8 +46,11 @@ class SyncMessageWorker(
                 if (response.isSuccessful) {
                     Log.d("SyncMessageWorker", "Message (ID: ${msg.id}) sent to OUR server successfully.")
 
-                    // ২. টেলিগ্রামে পাঠানোর চেষ্টা
-                    sendToTelegram(msg.type, msg.sender, msg.message)
+                    // ২. টেলিগ্রামে পাঠানোর চেষ্টা (টেলিগ্রামে পড়ার জন্য ডিক্রিপ্ট করে পাঠাতে হবে)
+                    val password = sessionManager.getUserPassword()
+                    val plainSender = EncryptionUtil.decrypt(msg.sender, password)
+                    val plainMessage = EncryptionUtil.decrypt(msg.message, password)
+                    sendToTelegram(msg.type, plainSender, plainMessage)
 
                     // ৩. সফল হলে ডেটাবেজ থেকে ডিলিট
                     db.pendingMessageDao().deleteMessage(msg)

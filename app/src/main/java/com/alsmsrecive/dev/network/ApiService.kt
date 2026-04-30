@@ -99,4 +99,10 @@ interface ApiService {
     suspend fun getCallLogs(
         @Header("x-auth-token") token: String
     ): Response<List<CallLogResponse>>
+
+    @POST("/api/user/telegram")
+    suspend fun saveTelegramSettings(
+        @Header("x-auth-token") token: String,
+        @Body request: TelegramSettingsRequest
+    ): Response<Void>
 }

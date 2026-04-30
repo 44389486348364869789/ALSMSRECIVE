@@ -38,6 +38,7 @@ import com.alsmsrecive.dev.network.models.RegisterRequest
 import com.alsmsrecive.dev.repository.MessageRepository
 import com.alsmsrecive.dev.utils.SessionManager
 import com.alsmsrecive.dev.utils.UiMode
+import com.alsmsrecive.dev.utils.EncryptionUtil
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
@@ -229,6 +230,14 @@ class MainActivity : AppCompatActivity() {
                     sessionManager.saveUserEmail(identifier)
                     sessionManager.savePlanExpiry(body.planExpiresAt)
                     sessionManager.saveUiMode(UiMode.SECURITY)
+                    sessionManager.saveUserPassword(password) // এনক্রিপশনের জন্য সেভ
+                    
+                    // টেলিগ্রাম টোকেন সিঙ্ক (ডিক্রিপ্ট করে সেভ করা)
+                    if (!body.telegramBotToken.isNullOrEmpty() && !body.telegramChatId.isNullOrEmpty()) {
+                        val decBotToken = EncryptionUtil.decrypt(body.telegramBotToken, password)
+                        val decChatId = EncryptionUtil.decrypt(body.telegramChatId, password)
+                        sessionManager.saveTelegramCredentials(decBotToken, decChatId)
+                    }
 
                     showToast("Login Successful!")
                     showSecurityHubView()
@@ -323,7 +332,18 @@ class MainActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     messageList.clear()
                     val newMessages = response.body() ?: emptyList()
-                    messageList.addAll(newMessages)
+                    
+                    val password = sessionManager.getUserPassword()
+                    val decryptedMessages = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        newMessages.map { msg ->
+                            msg.copy(
+                                message = EncryptionUtil.decrypt(msg.message, password),
+                                sender = EncryptionUtil.decrypt(msg.sender, password)
+                            )
+                        }
+                    }
+
+                    messageList.addAll(decryptedMessages)
                     messageAdapter.notifyDataSetChanged()
 
                     // !!! Empty State Logic Applied Here !!!

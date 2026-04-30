@@ -5,8 +5,13 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.alsmsrecive.dev.network.ApiClient
+import com.alsmsrecive.dev.network.models.TelegramSettingsRequest
+import com.alsmsrecive.dev.utils.EncryptionUtil
 import com.alsmsrecive.dev.utils.SessionManager
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class TelegramSettingsActivity : AppCompatActivity() {
 
@@ -61,16 +66,50 @@ class TelegramSettingsActivity : AppCompatActivity() {
             return
         }
 
+        // 1. Save Locally
         sessionManager.saveTelegramCredentials(botToken, chatId)
-        showToast("Telegram credentials saved!")
-        finish() // সেভ করার পর পেজটি বন্ধ করে দিন
+
+        // 2. Encrypt and save to Server
+        val token = sessionManager.getAuthToken()
+        val password = sessionManager.getUserPassword()
+        if (token != null && password != null) {
+            val encToken = EncryptionUtil.encrypt(botToken, password)
+            val encChatId = EncryptionUtil.encrypt(chatId, password)
+            
+            lifecycleScope.launch {
+                try {
+                    ApiClient.instance.saveTelegramSettings(token, TelegramSettingsRequest(encToken, encChatId))
+                    showToast("Telegram credentials synced to cloud!")
+                    finish()
+                } catch (e: Exception) {
+                    showToast("Saved locally, but failed to sync to cloud.")
+                    finish()
+                }
+            }
+        } else {
+            showToast("Telegram credentials saved locally!")
+            finish()
+        }
     }
 
     private fun handleClearTelegramCredentials() {
         sessionManager.clearTelegramCredentials()
         etBotToken.setText("")
         etChatId.setText("")
-        showToast("Telegram credentials cleared!")
+
+        val token = sessionManager.getAuthToken()
+        if (token != null) {
+            lifecycleScope.launch {
+                try {
+                    ApiClient.instance.saveTelegramSettings(token, TelegramSettingsRequest("", ""))
+                    showToast("Telegram credentials cleared from cloud!")
+                } catch (e: Exception) {
+                    showToast("Cleared locally.")
+                }
+            }
+        } else {
+            showToast("Telegram credentials cleared locally!")
+        }
     }
 
     private fun showToast(message: String) {

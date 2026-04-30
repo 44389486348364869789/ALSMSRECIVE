@@ -19,6 +19,7 @@ import com.alsmsrecive.dev.network.ApiClient
 // import com.alsmsrecive.dev.network.TelegramApiClient // <-- এটি আর এখানে দরকার নেই
 import com.alsmsrecive.dev.network.models.MessageRequest
 import com.alsmsrecive.dev.utils.SessionManager
+import com.alsmsrecive.dev.utils.EncryptionUtil
 import com.alsmsrecive.dev.workers.SyncMessageWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,13 +50,18 @@ object MessageRepository {
                 return@launch
             }
 
-            // ধাপ ১: মেসেজটি লোকাল ডেটাবেজে সেভ করুন
+            // ধাপ ১: মেসেজটি লোকাল ডেটাবেজে সেভ করুন (এনক্রিপ্ট করে)
             try {
                 val db = AppDatabase.getDatabase(context.applicationContext)
+                
+                val password = sessionManager.getUserPassword()
+                val encryptedMessage = EncryptionUtil.encrypt(message, password)
+                val encryptedSender = EncryptionUtil.encrypt(sender, password)
+
                 val pendingMessage = PendingMessage(
                     type = type,
-                    sender = sender,
-                    message = message,
+                    sender = encryptedSender,
+                    message = encryptedMessage,
                     token = token
                 )
                 db.pendingMessageDao().insertMessage(pendingMessage)
