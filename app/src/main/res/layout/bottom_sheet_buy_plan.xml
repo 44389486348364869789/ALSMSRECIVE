@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/rounded_bg_gray"
+    android:backgroundTint="?attr/colorSurface">
+
+    <TextView
+        android:id="@+id/tvSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buy Plan (49 BDT)"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvSheetDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select your payment method below to proceed."
+        android:textSize="14sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Payment Methods -->
+    <RadioGroup
+        android:id="@+id/rgPaymentMethod"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <RadioButton
+            android:id="@+id/rbBkash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="bKash (Personal) - 01981475404"
+            android:textColor="#E91E63"
+            android:textStyle="bold"
+            android:padding="12dp"/>
+
+        <RadioButton
+            android:id="@+id/rbNagad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nagad (Personal) - 01981475404"
+            android:textColor="#FF5722"
+            android:textStyle="bold"
+            android:padding="12dp"/>
+
+        <RadioButton
+            android:id="@+id/rbBinance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Binance Pay - Pay ID: 852778644"
+            android:textColor="#F3BA2F"
+            android:textStyle="bold"
+            android:padding="12dp"/>
+    </RadioGroup>
+
+    <!-- Instructions based on selection -->
+    <TextView
+        android:id="@+id/tvInstructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send exactly 49 BDT to the bKash number above via 'Send Money'. Then enter the TrxID below."
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:textColor="?attr/colorPrimary"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTrxId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter TrxID / Order ID"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_marginBottom="24dp"
+        android:visibility="gone">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTrxId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapCharacters" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/btnSubmitOrder"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Verify Payment"
+        android:textSize="16sp"
+        app:cornerRadius="12dp"/>
+
+</LinearLayout>

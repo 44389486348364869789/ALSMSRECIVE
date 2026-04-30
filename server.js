@@ -85,6 +85,31 @@ const BroadcastSchema = new mongoose.Schema({
 });
 const Broadcast = mongoose.model('Broadcast', BroadcastSchema);
 
+const OrderSchema = new mongoose.Schema({
+    userId: { type: String, required: true },
+    planType: { type: Number, required: true }, // e.g. 18, 29, 49, 99
+    amountBDT: { type: Number, required: true },
+    amountUSDT: { type: Number, required: true },
+    deviceLimit: { type: Number, required: true },
+    paymentMethod: { type: String, enum: ['bkash', 'nagad', 'binance', 'none'], default: 'none' },
+    status: { type: String, enum: ['pending', 'completed', 'expired'], default: 'pending' },
+    transactionId: { type: String, default: "" }, // Filled when verified
+    createdAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, default: () => Date.now() + 60*60*1000 } // 1 hour expiry
+});
+const Order = mongoose.model('Order', OrderSchema);
+
+const TransactionSchema = new mongoose.Schema({
+    transactionId: { type: String, required: true, unique: true },
+    amount: { type: Number, required: true },
+    sender: { type: String },
+    method: { type: String, enum: ['bkash', 'nagad', 'binance'], required: true },
+    isUsed: { type: Boolean, default: false },
+    usedByUserId: { type: String, default: "" },
+    createdAt: { type: Date, default: Date.now }
+});
+const Transaction = mongoose.model('Transaction', TransactionSchema);
+
 
 // --- ২. মিডলওয়্যার (API রুটের আগেই থাকতে হবে) ---
 
@@ -122,6 +147,207 @@ const adminAuthMiddleware = (req, res, next) => {
 
 
 // --- ৩. API Routes ---
+
+// === Auto Subscription System ===
+
+// Webhook for receiving SMS from the external app
+app.post('/api/webhook/sms', async (req, res) => {
+    try {
+        // The external app sends structured JSON data directly
+        const { secret_key, amount, trx_id, provider, sender } = req.body;
+
+        // Verify Secret Key
+        const expectedKey = process.env.WEBHOOK_SECRET || "ALSMS_AUTO_VERIFY_123";
+        // Also support the user's legacy gateway secret key if needed, or stick to ours
+        if (secret_key !== expectedKey && secret_key !== "YOUR_GATEWAY_SECRET") { // Added fallback if they haven't updated the app's secret key
+            return res.status(401).json({ msg: "Invalid secret key" });
+        }
+
+        if (!trx_id || !amount) {
+            return res.status(400).json({ msg: "trx_id and amount are required" });
+        }
+
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({ msg: "Invalid amount" });
+        }
+
+        // Detect Method from provider
+        let method = 'bkash';
+        const lowerProvider = (provider || "").toLowerCase();
+        const lowerSender = (sender || "").toLowerCase();
+        
+        if (lowerProvider.includes('nagad') || lowerSender.includes('nagad')) {
+            method = 'nagad';
+        } else if (lowerProvider.includes('binance') || lowerSender.includes('binance')) {
+            method = 'binance';
+        }
+
+        // Check if transaction already exists
+        const existingTx = await Transaction.findOne({ transactionId: trx_id });
+        if (existingTx) {
+            return res.status(200).json({ msg: "Transaction already exists" });
+        }
+
+        // Save new transaction
+        const newTx = new Transaction({
+            transactionId: trx_id,
+            amount: parsedAmount,
+            sender: sender || "Unknown",
+            method: method
+        });
+
+        await newTx.save();
+        res.status(200).json({ msg: "Transaction successfully saved", data: newTx });
+
+    } catch (err) {
+        console.error("Webhook Error:", err);
+        res.status(500).json({ msg: "Server error" });
+    }
+});
+
+// Create Order
+app.post('/api/plans/create-order', authMiddleware, async (req, res) => {
+    try {
+        const { planType, paymentMethod } = req.body;
+        
+        let amountBDT = 0;
+        let amountUSDT = 0;
+        let deviceLimit = 1;
+
+        if (planType === 18) { amountBDT = 18; amountUSDT = 0.26; deviceLimit = 1; }
+        else if (planType === 29) { amountBDT = 29; amountUSDT = 0.35; deviceLimit = 2; }
+        else if (planType === 49) { amountBDT = 49; amountUSDT = 0.52; deviceLimit = 5; }
+        else if (planType === 99) { amountBDT = 99; amountUSDT = 0.95; deviceLimit = 21; }
+        else {
+            return res.status(400).json({ msg: "Invalid plan type" });
+        }
+
+        const newOrder = new Order({
+            userId: req.user._id,
+            planType,
+            amountBDT,
+            amountUSDT,
+            deviceLimit,
+            paymentMethod: paymentMethod || 'none'
+        });
+
+        const savedOrder = await newOrder.save();
+        res.json({ msg: "Order created", orderId: savedOrder._id, amountBDT, amountUSDT });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// For Binance Verification, we import needed modules
+const crypto = require('crypto');
+const axios = require('axios');
+
+async function verifyBinanceTransaction(orderIdToMatch, expectedAmountUSDT) {
+    const BINANCE_API_KEY = process.env.BINANCE_API_KEY || '4PmqYTo2sxRWOze7GSGucVj3xytO2dgAoRfo3bXoIAUHKj9vooLQDnkPjl0ulQ5f';
+    const BINANCE_SECRET_KEY = process.env.BINANCE_SECRET_KEY || 'srTePTkgNUhxQPVpeLrTqEC57CQfYoxcOxiTuNLokA1y6Sy4WAMdLW5mf9OuVssA';
+    const BASE_URL = "https://api.binance.com";
+    
+    try {
+        const timestamp = Date.now();
+        const queryParams = `timestamp=${timestamp}`;
+        const signature = crypto.createHmac('sha256', BINANCE_SECRET_KEY).update(queryParams).digest('hex');
+        
+        const url = `${BASE_URL}/sapi/v1/pay/transactions?${queryParams}&signature=${signature}`;
+        
+        const response = await axios.get(url, {
+            headers: { 'X-MBX-APIKEY': BINANCE_API_KEY }
+        });
+
+        if (response.data && response.data.data) {
+            const transactions = response.data.data;
+            for (let tx of transactions) {
+                const amountFloat = parseFloat(tx.amount || '0');
+                if (amountFloat > 0 && tx.orderId === orderIdToMatch) {
+                    // Check amount. Give a tiny margin of error or just require it to be strictly greater/equal.
+                    // Actually, if the user paid at least the required amount, approve.
+                    if (amountFloat >= (expectedAmountUSDT - 0.05)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    } catch (error) {
+        console.error("Binance Verify Error:", error.message);
+        return false;
+    }
+}
+
+// Verify Order
+app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
+    try {
+        const { orderId, transactionId } = req.body; // transactionId can be Bkash TrxID or Binance OrderID
+
+        const order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ msg: "Order not found" });
+        if (order.userId !== req.user._id.toString()) return res.status(403).json({ msg: "Unauthorized order access" });
+        if (order.status !== 'pending') return res.status(400).json({ msg: "Order is already " + order.status });
+        if (new Date() > new Date(order.expiresAt)) {
+            order.status = 'expired';
+            await order.save();
+            return res.status(400).json({ msg: "Order has expired. Please create a new one." });
+        }
+
+        let isVerified = false;
+
+        if (order.paymentMethod === 'binance') {
+            isVerified = await verifyBinanceTransaction(transactionId, order.amountUSDT);
+            if (!isVerified) {
+                return res.status(400).json({ msg: "Binance transaction not found or amount insufficient." });
+            }
+            order.transactionId = transactionId;
+        } else {
+            // Local Webhook DB check (Bkash/Nagad)
+            const tx = await Transaction.findOne({ transactionId: transactionId });
+            if (!tx) {
+                return res.status(404).json({ msg: "Transaction not found in our system. Please wait 1-2 mins and try again." });
+            }
+            if (tx.isUsed) {
+                return res.status(400).json({ msg: "This Transaction ID has already been used." });
+            }
+            if (tx.amount < order.amountBDT) {
+                return res.status(400).json({ msg: `Insufficient amount. Required: ${order.amountBDT}, Found: ${tx.amount}` });
+            }
+            
+            // Mark TX as used
+            tx.isUsed = true;
+            tx.usedByUserId = req.user._id.toString();
+            await tx.save();
+            isVerified = true;
+            order.transactionId = transactionId;
+        }
+
+        if (isVerified) {
+            order.status = 'completed';
+            await order.save();
+
+            // Upgrade user
+            const user = await User.findById(req.user._id);
+            // Add 30 days to current plan expiry or current date if expired
+            let currentExpiry = user.planExpiresAt ? new Date(user.planExpiresAt) : new Date();
+            if (currentExpiry < new Date()) currentExpiry = new Date(); // If expired, start from today
+            
+            currentExpiry.setDate(currentExpiry.getDate() + 30); // 30 Days duration
+            
+            user.planExpiresAt = currentExpiry;
+            user.deviceLimit = order.deviceLimit;
+            await user.save();
+
+            return res.json({ msg: "Plan successfully upgraded!", newExpiry: user.planExpiresAt, deviceLimit: user.deviceLimit });
+        }
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 // Broadcast Routes
 app.get('/api/broadcasts/active', async (req, res) => {
@@ -222,6 +448,8 @@ app.post('/api/login', async (req, res) => {
                 res.json({ 
                     token, 
                     planExpiresAt: user.planExpiresAt,
+                    deviceLimit: user.deviceLimit || 1,
+                    activeSessionsCount: user.activeSessions ? user.activeSessions.length : 0,
                     telegramBotToken: user.telegramBotToken,
                     telegramChatId: user.telegramChatId
                 });

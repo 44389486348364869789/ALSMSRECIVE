@@ -1,75 +1,251 @@
 package com.alsmsrecive.dev
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
 import android.widget.Button
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.alsmsrecive.dev.network.ApiClient
+import com.alsmsrecive.dev.network.ApiService
+import com.alsmsrecive.dev.network.models.CreateOrderRequest
+import com.alsmsrecive.dev.network.models.VerifyOrderRequest
 import com.alsmsrecive.dev.utils.SessionManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
 class PlanActivity : AppCompatActivity() {
 
     private lateinit var sessionManager: SessionManager
+    private lateinit var apiService: ApiService
     private lateinit var tvPlanStatus: TextView
     private lateinit var tvExpiryDate: TextView
-    private lateinit var btnContactAdmin: Button
+    private lateinit var tvTimeLeft: TextView
+    private lateinit var tvDeviceLimits: TextView
     private lateinit var btnBack: Button
+
+    private var expiryTimeMillis: Long = 0
+    private val handler = Handler(Looper.getMainLooper())
+    private val countdownRunnable = object : Runnable {
+        override fun run() {
+            updateCountdown()
+            handler.postDelayed(this, 1000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_plan)
+        
         sessionManager = SessionManager(applicationContext)
+        apiService = ApiClient.instance
 
         tvPlanStatus = findViewById(R.id.tvPlanStatus)
         tvExpiryDate = findViewById(R.id.tvExpiryDate)
-        btnContactAdmin = findViewById(R.id.btnContactAdmin)
+        tvTimeLeft = findViewById(R.id.tvTimeLeft)
+        tvDeviceLimits = findViewById(R.id.tvDeviceLimits)
         btnBack = findViewById(R.id.btnBackPlan)
 
+        findViewById<MaterialCardView>(R.id.cardPlan18).setOnClickListener { showBuyPlanSheet(18) }
+        findViewById<MaterialCardView>(R.id.cardPlan29).setOnClickListener { showBuyPlanSheet(29) }
+        findViewById<MaterialCardView>(R.id.cardPlan49).setOnClickListener { showBuyPlanSheet(49) }
+        findViewById<MaterialCardView>(R.id.cardPlan99).setOnClickListener { showBuyPlanSheet(99) }
+
+        btnBack.setOnClickListener { finish() }
+
         displayPlanInfo()
+    }
 
-        btnContactAdmin.setOnClickListener {
-            // অ্যাডমিনের সাথে যোগাযোগের লিংক (আপনার টেলিগ্রাম লিংক দিন)
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/alaminvai03"))
-            startActivity(intent)
-        }
+    override fun onResume() {
+        super.onResume()
+        handler.post(countdownRunnable)
+    }
 
-        btnBack.setOnClickListener {
-            finish()
-        }
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(countdownRunnable)
     }
 
     private fun displayPlanInfo() {
         val expiryStr = sessionManager.getPlanExpiry()
+        
+        val active = sessionManager.getActiveSessionsCount()
+        val max = sessionManager.getDeviceLimit()
+        tvDeviceLimits.text = "Active Devices: $active / $max"
 
         if (expiryStr != null) {
             try {
-                // সার্ভার থেকে আসা ডেট ফরম্যাট করা
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                 inputFormat.timeZone = TimeZone.getTimeZone("UTC")
                 val date = inputFormat.parse(expiryStr)
-
-                val outputFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-                val formattedDate = outputFormat.format(date!!)
-
-                tvExpiryDate.text = "Expires on: $formattedDate"
+                
+                if (date != null) {
+                    expiryTimeMillis = date.time
+                    val outputFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+                    tvExpiryDate.text = "Exact Date: ${outputFormat.format(date)}"
+                }
 
                 if (sessionManager.isPlanExpired()) {
                     tvPlanStatus.text = "Status: EXPIRED"
                     tvPlanStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+                    tvTimeLeft.text = "Expired"
+                    tvTimeLeft.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
                 } else {
-                    tvPlanStatus.text = "Status: ACTIVE ✅"
+                    tvPlanStatus.text = "Status: ACTIVE"
                     tvPlanStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
+                    updateCountdown() // Update immediately
                 }
             } catch (e: Exception) {
-                tvExpiryDate.text = "Expires on: $expiryStr"
+                tvExpiryDate.text = "Exact Date: $expiryStr"
             }
         } else {
-            tvExpiryDate.text = "Expires on: N/A"
+            tvExpiryDate.text = "Exact Date: N/A"
             tvPlanStatus.text = "Status: UNKNOWN"
+            tvTimeLeft.text = "N/A"
         }
+    }
+
+    private fun updateCountdown() {
+        if (expiryTimeMillis == 0L) return
+        val now = System.currentTimeMillis()
+        val diff = expiryTimeMillis - now
+
+        if (diff <= 0) {
+            tvTimeLeft.text = "Expired"
+            tvTimeLeft.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+            return
+        }
+
+        val days = diff / (1000 * 60 * 60 * 24)
+        val hours = (diff / (1000 * 60 * 60)) % 24
+        val mins = (diff / (1000 * 60)) % 60
+        val secs = (diff / 1000) % 60
+
+        tvTimeLeft.text = "Expires in: $days Days $hours Hrs $mins Mins $secs Secs"
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showBuyPlanSheet(planType: Int) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_buy_plan, null)
+        bottomSheetDialog.setContentView(view)
+
+        val tvSheetTitle = view.findViewById<TextView>(R.id.tvSheetTitle)
+        val rgPaymentMethod = view.findViewById<RadioGroup>(R.id.rgPaymentMethod)
+        val tvInstructions = view.findViewById<TextView>(R.id.tvInstructions)
+        val tilTrxId = view.findViewById<TextInputLayout>(R.id.tilTrxId)
+        val etTrxId = view.findViewById<TextInputEditText>(R.id.etTrxId)
+        val btnSubmitOrder = view.findViewById<Button>(R.id.btnSubmitOrder)
+        
+        var selectedMethod = ""
+        var currentOrderId = ""
+
+        tvSheetTitle.text = "Buy Plan ($planType BDT)"
+
+        rgPaymentMethod.setOnCheckedChangeListener { _, checkedId ->
+            selectedMethod = when (checkedId) {
+                R.id.rbBkash -> "bkash"
+                R.id.rbNagad -> "nagad"
+                R.id.rbBinance -> "binance"
+                else -> ""
+            }
+            
+            if (selectedMethod.isNotEmpty()) {
+                tvInstructions.visibility = View.VISIBLE
+                tilTrxId.visibility = View.VISIBLE
+                btnSubmitOrder.isEnabled = false
+                btnSubmitOrder.text = "Creating Order..."
+
+                val instructionText = if (selectedMethod == "binance") {
+                    tilTrxId.hint = "Enter Binance Order ID"
+                    "Send the equivalent USDT amount to Binance Pay ID. Then enter the Order ID below."
+                } else {
+                    tilTrxId.hint = "Enter TrxID"
+                    "Send exactly $planType BDT to the number above via 'Send Money'. Then enter the TrxID below."
+                }
+                tvInstructions.text = instructionText
+
+                // Call create order
+                lifecycleScope.launch {
+                    try {
+                        val token = sessionManager.getAuthToken() ?: return@launch
+                        val req = CreateOrderRequest(planType, selectedMethod)
+                        val res = apiService.createOrder(token, req)
+                        if (res.isSuccessful && res.body() != null) {
+                            currentOrderId = res.body()!!.orderId
+                            if (selectedMethod == "binance") {
+                                tvInstructions.text = "Send exactly ${res.body()!!.amountUSDT} USDT to Binance Pay ID. Then enter the Order ID below."
+                            }
+                            btnSubmitOrder.isEnabled = true
+                            btnSubmitOrder.text = "Verify Payment"
+                        } else {
+                            showToast("Failed to create order")
+                            bottomSheetDialog.dismiss()
+                        }
+                    } catch (e: Exception) {
+                        showToast("Error creating order")
+                        bottomSheetDialog.dismiss()
+                    }
+                }
+            }
+        }
+
+        btnSubmitOrder.setOnClickListener {
+            val txId = etTrxId.text.toString().trim()
+            if (txId.isEmpty()) {
+                showToast("Please enter Transaction ID")
+                return@setOnClickListener
+            }
+            if (currentOrderId.isEmpty()) {
+                showToast("Invalid Order ID")
+                return@setOnClickListener
+            }
+
+            btnSubmitOrder.isEnabled = false
+            btnSubmitOrder.text = "Verifying..."
+
+            lifecycleScope.launch {
+                try {
+                    val token = sessionManager.getAuthToken() ?: return@launch
+                    val req = VerifyOrderRequest(currentOrderId, txId)
+                    val res = apiService.verifyOrder(token, req)
+                    if (res.isSuccessful && res.body() != null) {
+                        showToast("Plan Upgraded Successfully!")
+                        sessionManager.savePlanExpiry(res.body()!!.newExpiry)
+                        if (res.body()!!.deviceLimit != null) {
+                            sessionManager.saveDeviceLimits(res.body()!!.deviceLimit!!, sessionManager.getActiveSessionsCount())
+                        }
+                        displayPlanInfo()
+                        bottomSheetDialog.dismiss()
+                    } else {
+                        val errorStr = res.errorBody()?.string() ?: "Verification Failed"
+                        showToast(errorStr)
+                        btnSubmitOrder.isEnabled = true
+                        btnSubmitOrder.text = "Try Again"
+                    }
+                } catch (e: Exception) {
+                    showToast("Error: ${e.message}")
+                    btnSubmitOrder.isEnabled = true
+                    btnSubmitOrder.text = "Try Again"
+                }
+            }
+        }
+
+        bottomSheetDialog.show()
     }
 }

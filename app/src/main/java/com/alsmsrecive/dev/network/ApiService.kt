@@ -108,4 +108,16 @@ interface ApiService {
 
     @GET("/api/broadcasts/active")
     suspend fun getActiveBroadcast(): Response<BroadcastResponse>
+
+    @POST("/api/plans/create-order")
+    suspend fun createOrder(
+        @Header("x-auth-token") token: String,
+        @Body request: CreateOrderRequest
+    ): Response<CreateOrderResponse>
+
+    @POST("/api/plans/verify-order")
+    suspend fun verifyOrder(
+        @Header("x-auth-token") token: String,
+        @Body request: VerifyOrderRequest
+    ): Response<VerifyOrderResponse>
 }

@@ -33,6 +33,8 @@ class SessionManager(context: Context) {
         private const val DEVICE_ID = "device_id"
         private const val DEVICE_NAME = "device_name"
         private const val TELEGRAM_FORWARDING_ENABLED = "telegram_forwarding_enabled"
+        private const val DEVICE_LIMIT = "device_limit"
+        private const val ACTIVE_SESSIONS = "active_sessions"
     }
 
     // --- টোকেন ম্যানেজমেন্ট ---
@@ -41,6 +43,16 @@ class SessionManager(context: Context) {
             sharedPreferences.edit().putString(PLAN_EXPIRY, expiryDate).apply()
         }
     }
+
+    fun saveDeviceLimits(limit: Int, active: Int) {
+        sharedPreferences.edit()
+            .putInt(DEVICE_LIMIT, limit)
+            .putInt(ACTIVE_SESSIONS, active)
+            .apply()
+    }
+
+    fun getDeviceLimit(): Int = sharedPreferences.getInt(DEVICE_LIMIT, 1)
+    fun getActiveSessionsCount(): Int = sharedPreferences.getInt(ACTIVE_SESSIONS, 0)
 
     fun getPlanExpiry(): String? {
         return sharedPreferences.getString(PLAN_EXPIRY, null)

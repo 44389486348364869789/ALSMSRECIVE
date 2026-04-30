@@ -271,6 +271,7 @@ class MainActivity : AppCompatActivity() {
                     sessionManager.saveUiMode(UiMode.SECURITY)
                     sessionManager.saveUserPassword(password) // এনক্রিপশনের জন্য সেভ
                     sessionManager.saveDeviceInfo(getUniqueDeviceId(), getDeviceName()) // ডিভাইসের নাম ও আইডি সেভ
+                    sessionManager.saveDeviceLimits(body.deviceLimit ?: 1, body.activeSessionsCount ?: 0)
                     
                     // টেলিগ্রাম টোকেন সিঙ্ক (ডিক্রিপ্ট করে সেভ করা)
                     if (!body.telegramBotToken.isNullOrEmpty() && !body.telegramChatId.isNullOrEmpty()) {
