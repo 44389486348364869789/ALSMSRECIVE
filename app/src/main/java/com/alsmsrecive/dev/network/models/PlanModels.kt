@@ -20,5 +20,12 @@ data class VerifyOrderRequest(
 data class VerifyOrderResponse(
     val msg: String,
     val newExpiry: String?,
-    val deviceLimit: Int?
+    val deviceLimit: Int?,
+    val activeSessionsCount: Int?
+)
+
+data class PaymentInfoResponse(
+    val bkash: String,
+    val nagad: String,
+    val binance: String
 )

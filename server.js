@@ -344,7 +344,8 @@ app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
             user.deviceLimit = order.deviceLimit;
             await user.save();
 
-            return res.json({ msg: "Plan successfully upgraded!", newExpiry: user.planExpiresAt, deviceLimit: user.deviceLimit });
+            const activeCount = user.activeSessions ? user.activeSessions.length : 0;
+            return res.json({ msg: "Plan successfully upgraded!", newExpiry: user.planExpiresAt, deviceLimit: user.deviceLimit, activeSessionsCount: activeCount });
         }
 
     } catch (err) {
@@ -679,6 +680,15 @@ const startCronJobs = () => {
 };
 
 // --- Frontend ---
+// --- Payment Info Endpoint ---
+app.get('/api/payment-info', (req, res) => {
+    res.json({
+        bkash: "01981475404",
+        nagad: "01981475404",
+        binance: "852778644"
+    });
+});
+
 app.get('/env.js', (req, res) => {
     res.type('application/javascript');
     res.send(`window.env = { API_BASE_URL: "${process.env.PUBLIC_API_URL || ''}" };`);

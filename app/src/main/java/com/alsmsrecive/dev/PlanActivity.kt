@@ -36,6 +36,7 @@ class PlanActivity : AppCompatActivity() {
     private lateinit var tvDeviceLimits: TextView
     private lateinit var btnBack: Button
 
+    private var paymentInfo: com.alsmsrecive.dev.network.models.PaymentInfoResponse? = null
     private var expiryTimeMillis: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private val countdownRunnable = object : Runnable {
@@ -66,6 +67,20 @@ class PlanActivity : AppCompatActivity() {
         btnBack.setOnClickListener { finish() }
 
         displayPlanInfo()
+        fetchPaymentInfo()
+    }
+
+    private fun fetchPaymentInfo() {
+        lifecycleScope.launch {
+            try {
+                val res = apiService.getPaymentInfo()
+                if (res.isSuccessful && res.body() != null) {
+                    paymentInfo = res.body()
+                }
+            } catch (e: Exception) {
+                // Handle silently
+            }
+        }
     }
 
     override fun onResume() {
@@ -152,6 +167,16 @@ class PlanActivity : AppCompatActivity() {
         val etTrxId = view.findViewById<TextInputEditText>(R.id.etTrxId)
         val btnSubmitOrder = view.findViewById<Button>(R.id.btnSubmitOrder)
         
+        val rbBkash = view.findViewById<RadioButton>(R.id.rbBkash)
+        val rbNagad = view.findViewById<RadioButton>(R.id.rbNagad)
+        val rbBinance = view.findViewById<RadioButton>(R.id.rbBinance)
+
+        if (paymentInfo != null) {
+            rbBkash.text = "bKash (Personal) - ${paymentInfo!!.bkash}"
+            rbNagad.text = "Nagad (Personal) - ${paymentInfo!!.nagad}"
+            rbBinance.text = "Binance Pay - Pay ID: ${paymentInfo!!.binance}"
+        }
+        
         var selectedMethod = ""
         var currentOrderId = ""
 
@@ -228,7 +253,8 @@ class PlanActivity : AppCompatActivity() {
                         showToast("Plan Upgraded Successfully!")
                         sessionManager.savePlanExpiry(res.body()!!.newExpiry)
                         if (res.body()!!.deviceLimit != null) {
-                            sessionManager.saveDeviceLimits(res.body()!!.deviceLimit!!, sessionManager.getActiveSessionsCount())
+                            val activeCount = res.body()!!.activeSessionsCount ?: sessionManager.getActiveSessionsCount()
+                            sessionManager.saveDeviceLimits(res.body()!!.deviceLimit!!, activeCount)
                         }
                         displayPlanInfo()
                         bottomSheetDialog.dismiss()
