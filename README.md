@@ -21,4 +21,3 @@ To only build the `.apk` file (for sharing or manual installation) without runni
 
 ## Important Notes
 - Always make sure your Android device is connected via USB and USB Debugging is enabled before running `.\run.ps1`.
-- If you want to modify the main Flutter app (StealthSync), you must navigate to that specific project directory first.
