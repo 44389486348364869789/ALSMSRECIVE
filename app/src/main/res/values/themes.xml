@@ -26,5 +26,13 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowLightStatusBar" tools:targetApi="M">false</item>
-        <item name="colorOnPrimary">@color/white</item> </style>
+        <item name="colorOnPrimary">@color/white</item>
+    </style>
+
+    <style name="Theme.ALSMSRECIVE.PrivacyCenter" parent="Theme.ALSMSRECIVE.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges</item>
+    </style>
 </resources>

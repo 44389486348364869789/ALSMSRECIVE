@@ -1,11 +1,16 @@
 package com.alsmsrecive.dev
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsetsController
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.alsmsrecive.dev.network.ApiClient
 import com.alsmsrecive.dev.utils.EncryptionUtil
@@ -16,117 +21,114 @@ import java.util.*
 
 class PrivacyCenterActivity : AppCompatActivity() {
 
-    private lateinit var sessionManager: SessionManager
-    private val apiService = ApiClient.instance
-
-    private lateinit var btnBack: ImageButton
-    private lateinit var tvServerView: TextView
-    private lateinit var tvUserView: TextView
-    private lateinit var tvProfileEmail: TextView
-    private lateinit var tvProfilePlanExpiry: TextView
-    private lateinit var tvProfileDevices: TextView
-    private lateinit var tvProfileStats: TextView
-    private lateinit var layoutLoading: LinearLayout
-    private lateinit var layoutContent: LinearLayout
+    private lateinit var session: SessionManager
+    private val api = ApiClient.instance
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Edge-to-edge
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_privacy_center)
 
-        sessionManager = SessionManager(applicationContext)
+        session = SessionManager(applicationContext)
 
-        btnBack = findViewById(R.id.btnBackPrivacy)
-        tvServerView = findViewById(R.id.tvServerView)
-        tvUserView = findViewById(R.id.tvUserView)
-        tvProfileEmail = findViewById(R.id.tvProfileEmail)
-        tvProfilePlanExpiry = findViewById(R.id.tvProfilePlanExpiry)
-        tvProfileDevices = findViewById(R.id.tvProfileDevices)
-        tvProfileStats = findViewById(R.id.tvProfileStats)
-        layoutLoading = findViewById(R.id.layoutLoading)
-        layoutContent = findViewById(R.id.layoutContent)
+        // Apply window insets so content doesn't hide under status/nav bar
+        val root = findViewById<LinearLayout>(R.id.rootPrivacy)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, sys.top, 0, sys.bottom)
+            insets
+        }
 
-        btnBack.setOnClickListener { finish() }
+        // Set light icons if light mode
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val isNightMode = resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            window.insetsController?.setSystemBarsAppearance(
+                if (isNightMode) 0 else WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            )
+        }
 
-        fetchAllData()
+        findViewById<ImageButton>(R.id.btnBackPrivacy).setOnClickListener { finish() }
+
+        loadData()
     }
 
-    private fun fetchAllData() {
-        val token = sessionManager.getAuthToken() ?: return
-        val password = sessionManager.getUserPassword() ?: "default_pass"
+    private fun loadData() {
+        val token = session.getAuthToken() ?: return
+        val password = session.getUserPassword() ?: "default_pass"
 
         lifecycleScope.launch {
             try {
-                // Fetch profile and messages in parallel logic (sequential for simplicity)
-                val profileResponse = apiService.getUserProfile(token)
-                val messagesResponse = apiService.getMessages(token)
+                val profileResp = api.getUserProfile(token)
+                val msgResp = api.getMessages(token)
 
-                if (profileResponse.isSuccessful) {
-                    val profile = profileResponse.body()!!
+                // Populate account data
+                if (profileResp.isSuccessful) {
+                    val p = profileResp.body()!!
+                    val id = p.email ?: p.phone ?: "Not set"
+                    val planText = formatDate(p.planExpiresAt)
+                    val devText = "${p.activeSessions} active / ${p.deviceLimit} allowed"
+                    val statsText = "${p.stats.totalMessages} messages  •  ${p.stats.totalCallLogs} call logs  •  ${p.stats.trashedMessages} trashed"
 
-                    // Email/Phone
-                    val identifier = profile.email ?: profile.phone ?: "Not set"
-                    tvProfileEmail.text = identifier
-
-                    // Plan Expiry
-                    tvProfilePlanExpiry.text = formatDate(profile.planExpiresAt)
-
-                    // Devices
-                    tvProfileDevices.text = "${profile.activeSessions} active / ${profile.deviceLimit} allowed"
-
-                    // Stats
-                    val stats = profile.stats
-                    tvProfileStats.text = "${stats.totalMessages} messages • ${stats.totalCallLogs} call logs • ${stats.trashedMessages} in trash"
+                    findViewById<TextView>(R.id.tvProfileEmail).text = id
+                    findViewById<TextView>(R.id.tvProfilePlanExpiry).text = planText
+                    findViewById<TextView>(R.id.tvProfileDevices).text = devText
+                    findViewById<TextView>(R.id.tvProfileStats).text = statsText
                 }
 
-                // E2EE Proof
-                if (messagesResponse.isSuccessful) {
-                    val messages = messagesResponse.body() ?: emptyList()
+                // Live flow proof
+                val tvStep1 = findViewById<TextView>(R.id.tvStep1Raw)
+                val tvStep3 = findViewById<TextView>(R.id.tvStep3Cipher)
+                val tvStep4 = findViewById<TextView>(R.id.tvStep4Decrypted)
 
-                    val encryptedMsg = messages.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
+                if (msgResp.isSuccessful) {
+                    val msgs = msgResp.body() ?: emptyList()
+                    val enc = msgs.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
 
-                    if (encryptedMsg != null) {
-                        val rawMsg = encryptedMsg.message ?: ""
-                        val rawSender = encryptedMsg.sender ?: ""
+                    if (enc != null) {
+                        val raw = enc.message ?: ""
+                        val decSender = tryDecrypt(enc.sender ?: "", password)
+                        val decText = tryDecrypt(raw, password)
 
-                        val decryptedSender = try { EncryptionUtil.decrypt(rawSender, password) } catch (e: Exception) { rawSender }
-                        val decryptedText = try { EncryptionUtil.decrypt(rawMsg, password) } catch (e: Exception) { "Decryption failed" }
-
-                        val serverSnippet = if (rawMsg.length > 60) rawMsg.take(60) + "..." else rawMsg
-                        val senderSnippet = if (rawSender.length > 20) rawSender.take(20) + "..." else rawSender
-
-                        tvServerView.text = "{\n  \"sender\": \"$senderSnippet\",\n  \"message\": \"$serverSnippet\"\n}"
-                        tvUserView.text = "From: $decryptedSender\n\n$decryptedText"
-                    } else if (messages.isNotEmpty()) {
-                        // Messages exist but not yet encrypted (old data)
-                        val first = messages.first()
-                        tvServerView.text = "{\n  \"sender\": \"${first.sender}\",\n  \"message\": \"${first.message?.take(60)}...\"\n}"
-                        tvUserView.text = "⚠️ This message was received before E2EE was enabled.\nNew messages will be fully encrypted."
+                        tvStep1.text = "From: $decSender (actual SMS)"
+                        tvStep3.text = if (raw.length > 55) raw.take(55) + "..." else raw
+                        tvStep4.text = if (decText.length > 80) decText.take(80) + "..." else decText
+                    } else if (msgs.isNotEmpty()) {
+                        tvStep1.text = "From: ${msgs.first().sender ?: "Unknown"}"
+                        tvStep3.text = "No E2EE msg yet (old data)"
+                        tvStep4.text = msgs.first().message?.take(80) ?: "-"
                     } else {
-                        tvServerView.text = "{ \"message\": \"No messages on server yet\" }"
-                        tvUserView.text = "📩 Send an SMS to your phone and it will appear here as proof."
+                        tvStep1.text = "No messages yet"
+                        tvStep3.text = "Send an SMS to see proof"
+                        tvStep4.text = "Waiting for first message..."
                     }
                 }
 
             } catch (e: Exception) {
-                tvServerView.text = "Error: ${e.localizedMessage}"
-                tvUserView.text = "Could not reach server."
+                findViewById<TextView>(R.id.tvStep3Cipher).text = "Error: ${e.localizedMessage}"
+                findViewById<TextView>(R.id.tvStep4Decrypted).text = "Check network connection"
             } finally {
-                layoutLoading.visibility = View.GONE
-                layoutContent.visibility = View.VISIBLE
+                findViewById<LinearLayout>(R.id.layoutLoading).visibility = View.GONE
+                findViewById<LinearLayout>(R.id.layoutContent).visibility = View.VISIBLE
             }
         }
     }
 
+    private fun tryDecrypt(text: String, password: String): String {
+        return try { EncryptionUtil.decrypt(text, password) } catch (e: Exception) { text }
+    }
+
     private fun formatDate(dateStr: String?): String {
-        if (dateStr == null) return "No plan"
+        if (dateStr == null) return "No active plan"
         return try {
-            val inputFmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            inputFmt.timeZone = TimeZone.getTimeZone("UTC")
-            val date = inputFmt.parse(dateStr) ?: return dateStr
-            val outFmt = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
-            outFmt.format(date)
-        } catch (e: Exception) {
-            dateStr
-        }
+            val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            fmt.timeZone = TimeZone.getTimeZone("UTC")
+            val date = fmt.parse(dateStr) ?: return dateStr
+            SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(date)
+        } catch (e: Exception) { dateStr }
     }
 }

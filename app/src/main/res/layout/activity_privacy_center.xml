@@ -1,31 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootPrivacy"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#070D1A">
+    android:background="?attr/colorSurface"
+    android:fitsSystemWindows="false">
 
-    <!-- Header Bar -->
+    <!-- Header -->
     <LinearLayout
-        android:id="@+id/headerBar"
+        android:id="@+id/headerPrivacy"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="8dp"
+        android:paddingStart="4dp"
         android:paddingEnd="16dp"
-        android:background="#0D1B2E">
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="?attr/colorSurface">
 
         <ImageButton
             android:id="@+id/btnBackPrivacy"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            app:tint="#38BDF8"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="?attr/colorOnSurface"
             android:contentDescription="Back" />
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_verified_shield"
+            app:tint="#22C55E"
+            android:layout_marginStart="4dp"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -38,34 +48,36 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Privacy &amp; Trust Center"
-                android:textColor="#F1F5F9"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Live data from your account"
-                android:textColor="#64748B"
-                android:textSize="12sp" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔒 VERIFIED"
+            android:text="SECURE"
             android:textColor="#22C55E"
             android:textSize="10sp"
-            android:textStyle="bold"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
+            android:textStyle="bold"/>
     </LinearLayout>
 
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorSurfaceVariant"/>
+
+    <!-- Scroll Content -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -73,30 +85,30 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Loading State -->
+            <!-- Loading -->
             <LinearLayout
                 android:id="@+id/layoutLoading"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="180dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:visibility="visible">
 
                 <ProgressBar
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:indeterminateTint="#38BDF8" />
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:indeterminateTint="#22C55E"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fetching your live data from server..."
-                    android:textColor="#64748B"
-                    android:textSize="14sp"
-                    android:layout_marginTop="16dp" />
+                    android:text="Fetching live data..."
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp"
+                    android:layout_marginTop="12dp"/>
             </LinearLayout>
 
-            <!-- SECTION 1: Your Account Info -->
+            <!-- Main Content -->
             <LinearLayout
                 android:id="@+id/layoutContent"
                 android:layout_width="match_parent"
@@ -104,22 +116,109 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <!-- === LIVE FLOW SECTION === -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📋 Your Account Data (Live from Server)"
-                    android:textColor="#F1F5F9"
-                    android:textSize="16sp"
+                    android:text="How SMS is Processed"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
                     android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Flow Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardCornerRadius="16dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorSurfaceVariant"
+                    app:cardElevation="4dp"
+                    android:layout_marginBottom="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Step 1: SMS Arrives -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <LinearLayout android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:background="@drawable/bg_circle_icon">
+                                <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_sms" app:tint="#38BDF8"/>
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1. SMS Arrives" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStep1Raw" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Waiting..." android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="↓  AES-256 Encryption" android:textColor="#94A3B8" android:textSize="11sp" android:gravity="center" android:paddingTop="6dp" android:paddingBottom="6dp"/>
+
+                        <!-- Step 2: Encrypted -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <LinearLayout android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:background="@drawable/bg_circle_icon">
+                                <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_encrypt" app:tint="#F59E0B"/>
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2. Encrypted on Device" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your password encrypts the message locally" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="↓  Sent to Server" android:textColor="#94A3B8" android:textSize="11sp" android:gravity="center" android:paddingTop="6dp" android:paddingBottom="6dp"/>
+
+                        <!-- Step 3: Server stores -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <LinearLayout android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:background="@drawable/bg_circle_icon">
+                                <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_cloud_server" app:tint="#F87171"/>
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. Server Stores Ciphertext" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStep3Cipher" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="U2FsdGVkX1..." android:textColor="#F87171" android:textSize="12sp" android:fontFamily="monospace"/>
+                            </LinearLayout>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HACKER" android:textColor="#F87171" android:textSize="9sp" android:textStyle="bold"/>
+                        </LinearLayout>
+
+                        <!-- Arrow -->
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="↓  Local Decryption" android:textColor="#94A3B8" android:textSize="11sp" android:gravity="center" android:paddingTop="6dp" android:paddingBottom="6dp"/>
+
+                        <!-- Step 4: You see -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <LinearLayout android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:background="@drawable/bg_circle_icon">
+                                <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_verified_shield" app:tint="#22C55E"/>
+                            </LinearLayout>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4. You See Real Message" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:id="@+id/tvStep4Decrypted" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Decrypting..." android:textColor="#22C55E" android:textSize="12sp"/>
+                            </LinearLayout>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YOU" android:textColor="#22C55E" android:textSize="9sp" android:textStyle="bold"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- === ACCOUNT DATA SECTION === -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your Account Data (Live from DB)"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"/>
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#0D1B2E"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:cardCornerRadius="16dp"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1E3A5F"
+                    app:strokeColor="?attr/colorSurfaceVariant"
+                    app:cardElevation="4dp"
                     android:layout_marginBottom="20dp">
 
                     <LinearLayout
@@ -129,373 +228,87 @@
                         android:padding="16dp">
 
                         <!-- Email Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingBottom="14dp">
-
-                            <TextView
-                                android:layout_width="24dp"
-                                android:layout_height="wrap_content"
-                                android:text="📧"
-                                android:textSize="16sp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="12dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Email / Phone"
-                                    android:textColor="#64748B"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:id="@+id/tvProfileEmail"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Loading..."
-                                    android:textColor="#CBD5E1"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="12dp">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_dialog_email" app:tint="?attr/colorOnSurfaceVariant"/>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Login ID (Email / Phone)" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="11sp"/>
+                                <TextView android:id="@+id/tvProfileEmail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
                             </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="SAVED"
-                                android:textColor="#F87171"
-                                android:textSize="9sp"
-                                android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SAVED" android:textColor="#F87171" android:textSize="9sp" android:textStyle="bold"/>
                         </LinearLayout>
 
-                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1E3A5F" android:layout_marginBottom="14dp"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorSurfaceVariant" android:layout_marginBottom="12dp"/>
 
                         <!-- Password Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingBottom="14dp">
-
-                            <TextView
-                                android:layout_width="24dp"
-                                android:layout_height="wrap_content"
-                                android:text="🔑"
-                                android:textSize="16sp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="12dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Password"
-                                    android:textColor="#64748B"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="$2b$10$••••••••••••••• (Bcrypt Hash)"
-                                    android:textColor="#22C55E"
-                                    android:textSize="13sp"
-                                    android:fontFamily="monospace" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="12dp">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_encrypt" app:tint="?attr/colorOnSurfaceVariant"/>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Password" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="11sp"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="$2b$10$••••• (Bcrypt Hash — Unreadable)" android:textColor="#22C55E" android:textSize="13sp" android:fontFamily="monospace"/>
                             </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="HASHED"
-                                android:textColor="#22C55E"
-                                android:textSize="9sp"
-                                android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HASHED" android:textColor="#22C55E" android:textSize="9sp" android:textStyle="bold"/>
                         </LinearLayout>
 
-                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1E3A5F" android:layout_marginBottom="14dp"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorSurfaceVariant" android:layout_marginBottom="12dp"/>
 
-                        <!-- Plan Expiry Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingBottom="14dp">
-
-                            <TextView
-                                android:layout_width="24dp"
-                                android:layout_height="wrap_content"
-                                android:text="📅"
-                                android:textSize="16sp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="12dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Plan Expires At"
-                                    android:textColor="#64748B"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:id="@+id/tvProfilePlanExpiry"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Loading..."
-                                    android:textColor="#CBD5E1"
-                                    android:textSize="14sp" />
+                        <!-- Plan Row -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="12dp">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_star" app:tint="?attr/colorOnSurfaceVariant"/>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Plan Expires At" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="11sp"/>
+                                <TextView android:id="@+id/tvProfilePlanExpiry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textColor="?attr/colorOnSurface" android:textSize="14sp"/>
                             </LinearLayout>
                         </LinearLayout>
 
-                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1E3A5F" android:layout_marginBottom="14dp"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorSurfaceVariant" android:layout_marginBottom="12dp"/>
 
-                        <!-- Device Limit Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:paddingBottom="14dp">
-
-                            <TextView
-                                android:layout_width="24dp"
-                                android:layout_height="wrap_content"
-                                android:text="📱"
-                                android:textSize="16sp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="12dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Device Limit / Active Sessions"
-                                    android:textColor="#64748B"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:id="@+id/tvProfileDevices"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Loading..."
-                                    android:textColor="#CBD5E1"
-                                    android:textSize="14sp" />
+                        <!-- Devices Row -->
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="12dp">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@android:drawable/ic_menu_compass" app:tint="?attr/colorOnSurfaceVariant"/>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Active Devices / Limit" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="11sp"/>
+                                <TextView android:id="@+id/tvProfileDevices" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textColor="?attr/colorOnSurface" android:textSize="14sp"/>
                             </LinearLayout>
                         </LinearLayout>
 
-                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#1E3A5F" android:layout_marginBottom="14dp"/>
+                        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="?attr/colorSurfaceVariant" android:layout_marginBottom="12dp"/>
 
                         <!-- Stats Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="24dp"
-                                android:layout_height="wrap_content"
-                                android:text="💾"
-                                android:textSize="16sp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical"
-                                android:layout_marginStart="12dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Stored Data (Encrypted)"
-                                    android:textColor="#64748B"
-                                    android:textSize="11sp" />
-
-                                <TextView
-                                    android:id="@+id/tvProfileStats"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Loading..."
-                                    android:textColor="#CBD5E1"
-                                    android:textSize="14sp" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:src="@drawable/ic_cloud_server" app:tint="?attr/colorOnSurfaceVariant"/>
+                            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="10dp">
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stored Data (All Encrypted)" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="11sp"/>
+                                <TextView android:id="@+id/tvProfileStats" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="..." android:textColor="?attr/colorOnSurface" android:textSize="14sp"/>
                             </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="AES-256"
-                                android:textColor="#38BDF8"
-                                android:textSize="9sp"
-                                android:textStyle="bold" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="AES-256" android:textColor="#38BDF8" android:textSize="9sp" android:textStyle="bold"/>
                         </LinearLayout>
 
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- SECTION 2: E2EE Live Proof -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔬 Live E2EE Proof"
-                    android:textColor="#F1F5F9"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="The same message shown side-by-side — as the server/hacker sees it, and as you see it after local decryption."
-                    android:textColor="#64748B"
-                    android:textSize="13sp"
-                    android:layout_marginBottom="14dp" />
-
-                <!-- Server View (Red) -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#1A0505"
-                    app:cardCornerRadius="12dp"
-                    app:strokeWidth="1dp"
-                    app:strokeColor="#7F1D1D"
-                    android:layout_marginBottom="4dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="14dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="🚫 What Developer / Hacker Sees on Server"
-                            android:textColor="#FCA5A5"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="10dp" />
-
-                        <TextView
-                            android:id="@+id/tvServerView"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Loading..."
-                            android:textColor="#FCA5A5"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:background="#0D0000"
-                            android:padding="10dp"
-                            android:textIsSelectable="true" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⬇ Local decryption using your password"
-                    android:textColor="#475569"
-                    android:textSize="12sp"
-                    android:gravity="center"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="4dp" />
-
-                <!-- User View (Green) -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#021A0E"
-                    app:cardCornerRadius="12dp"
-                    app:strokeWidth="1dp"
-                    app:strokeColor="#065F46"
-                    android:layout_marginBottom="24dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="14dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="✅ What You See After Local Decryption"
-                            android:textColor="#6EE7B7"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="10dp" />
-
-                        <TextView
-                            android:id="@+id/tvUserView"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Loading..."
-                            android:textColor="#A7F3D0"
-                            android:textSize="14sp"
-                            android:background="#010D05"
-                            android:padding="10dp"
-                            android:textIsSelectable="true" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- SECTION 3: Our Guarantee -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📜 Our Data Policy"
-                    android:textColor="#F1F5F9"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                <!-- Policy Card -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Our Data Policy" android:textColor="?attr/colorOnSurface" android:textSize="15sp" android:textStyle="bold" android:layout_marginBottom="12dp"/>
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#0D1B2E"
+                    app:cardBackgroundColor="?attr/colorSurface"
                     app:cardCornerRadius="16dp"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#1E3A5F"
+                    app:strokeColor="?attr/colorSurfaceVariant"
+                    app:cardElevation="4dp"
                     android:layout_marginBottom="32dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="• Email/Phone — Stored in plaintext for login identification only.\n\n• Password — Stored as a one-way Bcrypt hash. Even developers cannot retrieve your real password.\n\n• Device ID &amp; Model — Stored to enforce your plan's device limit.\n\n• SMS &amp; Notifications — Stored as AES-256 encrypted ciphertext. Nobody can read your messages without your password.\n\n• Call Logs — Phone numbers are also AES-256 encrypted before storing.\n\n• Telegram Token — Stored encrypted. Used only to forward your messages when you enable it.\n\n• We do NOT sell, share, or analyze any of your data."
-                            android:textColor="#94A3B8"
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:text="• Email / Phone — Stored for login only.\n\n• Password — Bcrypt hashed. Not readable by anyone.\n\n• Device ID &amp; Model — Stored to enforce device limit.\n\n• SMS &amp; Notifications — AES-256 encrypted before sending to server.\n\n• Call Logs — Phone numbers also AES-256 encrypted.\n\n• Telegram Token — Stored encrypted, used only by you.\n\n• We do NOT sell, read, or share your data."
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="13sp"
-                            android:lineSpacingExtra="4dp" />
-
+                            android:lineSpacingExtra="4dp"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
 </LinearLayout>
