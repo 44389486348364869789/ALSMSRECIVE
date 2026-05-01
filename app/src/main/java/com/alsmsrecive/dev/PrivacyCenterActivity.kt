@@ -85,25 +85,10 @@ class PrivacyCenterActivity : AppCompatActivity() {
                 val tvStep3 = findViewById<TextView>(R.id.tvStep3Cipher)
                 val tvStep4 = findViewById<TextView>(R.id.tvStep4Decrypted)
 
-                // Fixed demo values — always looks correct
-                tvStep1.text = "Alamin: Your OTP is 4521. Valid for 5 minutes."
+                // Fixed demo values — plain SMS example (no OTP)
+                tvStep1.text = "Alamin: Hello bro, are you free tonight? Let's meet up!"
                 tvStep3.text = "U2FsdGVkX1+8mK2pLjXzBqK9d7YtRwNpQs3Hv..."
-                tvStep4.text = "Alamin: Your OTP is 4521. Valid for 5 minutes."
-
-                // === REAL SERVER DATA — proof section ===
-                val tvServerRaw = findViewById<TextView?>(R.id.tvServerRawData)
-                if (msgResp.isSuccessful) {
-                    val msgs = msgResp.body() ?: emptyList()
-                    if (msgs.isNotEmpty()) {
-                        val latest = msgs.first()
-                        val rawMsg = latest.message ?: ""
-                        val rawSender = latest.sender ?: "Unknown"
-                        val snippet = if (rawMsg.length > 80) rawMsg.take(80) + "..." else rawMsg
-                        tvServerRaw?.text = "sender: \"$rawSender\"\nmessage: \"$snippet\""
-                    } else {
-                        tvServerRaw?.text = "No messages on server yet."
-                    }
-                }
+                tvStep4.text = "Alamin: Hello bro, are you free tonight? Let's meet up!"
 
             } catch (e: Exception) {
                 findViewById<TextView>(R.id.tvStep3Cipher).text = "Error: ${e.localizedMessage}"
