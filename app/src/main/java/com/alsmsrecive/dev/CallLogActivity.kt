@@ -63,9 +63,7 @@ class CallLogActivity : AppCompatActivity() {
                     val password = sessionManager.getUserPassword() ?: "default_pass"
                     
                     val decryptedLogs = rawLogs.map { log ->
-                        if (log.number.startsWith("U2FsdGVkX1")) {
-                            log.copy(number = com.alsmsrecive.dev.utils.EncryptionUtil.decrypt(log.number, password))
-                        } else log
+                        log.copy(number = com.alsmsrecive.dev.utils.EncryptionUtil.decrypt(log.number, password))
                     }
 
                     callLogList.clear()

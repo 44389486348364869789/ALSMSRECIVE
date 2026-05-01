@@ -6,5 +6,6 @@ data class MessageRequest(
     val sender: String,
     val message: String,
     val deviceId: String,
-    val deviceName: String
+    val deviceName: String,
+    val timestamp: Long? = null
 )

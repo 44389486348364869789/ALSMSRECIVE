@@ -45,7 +45,8 @@ class SyncMessageWorker(
                     sender = msg.sender,
                     message = msg.message,
                     deviceId = msg.deviceId,
-                    deviceName = msg.deviceName
+                    deviceName = msg.deviceName,
+                    timestamp = msg.timestamp
                 )
                 val response = apiService.postMessage(msg.token, request)
 
@@ -57,7 +58,7 @@ class SyncMessageWorker(
                         val password = sessionManager.getUserPassword()
                         val plainSender = EncryptionUtil.decrypt(msg.sender, password)
                         val plainMessage = EncryptionUtil.decrypt(msg.message, password)
-                        sendToTelegram(msg.type, plainSender, plainMessage)
+                        sendToTelegram(msg.type, plainSender, plainMessage, msg.timestamp)
                     } else {
                         Log.d("SyncMessageWorker", "Telegram forwarding is disabled for this device.")
                     }
@@ -78,15 +79,15 @@ class SyncMessageWorker(
     }
 
     // এটি MessageRepository থেকে কপি করা হেল্পার ফাংশন
-    private suspend fun sendToTelegram(type: String, sender: String, message: String) {
+    private suspend fun sendToTelegram(type: String, sender: String, message: String, timestamp: Long) {
         try {
             val botToken = sessionManager.getTelegramBotToken()
             val chatId = sessionManager.getTelegramChatId()
 
             if (!botToken.isNullOrEmpty() && !chatId.isNullOrEmpty()) {
-                val now = LocalDateTime.now()
+                val msgTime = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(timestamp), java.time.ZoneId.systemDefault())
                 val formatter = DateTimeFormatter.ofPattern("hh:mm a | dd MMM yyyy")
-                val formattedTimestamp = now.format(formatter)
+                val formattedTimestamp = msgTime.format(formatter)
                 val telegramMessage = "*[${type.uppercase()}]*\n" +
                         "*From: $sender*\n\n" +
                         "$message\n\n" +
