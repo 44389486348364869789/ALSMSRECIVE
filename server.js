@@ -8,6 +8,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+app.set('trust proxy', 1); // Fix: Prevent rate limiter from blocking everyone if behind Nginx/Cloudflare
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -172,18 +173,44 @@ const authMiddleware = async (req, res, next) => {
     try {
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
-            console.error('[CRITICAL] JWT_SECRET not set in .env! Using insecure fallback.');
+            console.error('[CRITICAL] JWT_SECRET not set in .env!');
+            return res.status(500).json({ msg: 'Server misconfiguration: JWT_SECRET missing' });
         }
-        const decoded = jwt.verify(token, jwtSecret || 'your_default_secret');
+        const decoded = jwt.verify(token, jwtSecret);
         const user = await User.findById(decoded.user.id);
         
         if (!user) return res.status(401).json({ msg: 'User not found' });
         if (user.isBlocked) return res.status(403).json({ msg: 'Your account has been blocked.' });
 
-        // Plan check (skip for admin)
+        // Plan check and Device Session validation (skip for admin)
         if (user.role !== 'admin') {
+            // 1. Validate if device session is still active
+            const reqDeviceId = req.header('x-device-id');
+            // We enforce session validation if x-device-id is present. 
+            // (Mobile app always sends this. Skipping check if absent ensures web frontend isn't locked out immediately if it doesn't send it, but we still protect mobile sessions)
+            if (reqDeviceId) {
+                const sessionExists = user.activeSessions && user.activeSessions.some(s => s.deviceId === reqDeviceId);
+                if (!sessionExists) {
+                    return res.status(401).json({ msg: 'Session expired or revoked. Please login again.' });
+                }
+            }
+
+            // 2. Plan check (bypass for specific routes needed for renewal)
             if (user.planExpiresAt && new Date() > new Date(user.planExpiresAt)) {
-                return res.status(402).json({ msg: 'Plan Expired! Please renew subscription.' });
+                const allowedPaths = [
+                    '/api/plans/create-order',
+                    '/api/plans/verify-order',
+                    '/api/payment-info',
+                    '/api/user/profile',
+                    '/api/logout',
+                    '/api/user/telegram'
+                ];
+                
+                // Allow if req.path exactly matches or starts with an allowed path
+                const isAllowed = allowedPaths.some(p => req.path === p || req.path.startsWith(p));
+                if (!isAllowed) {
+                    return res.status(402).json({ msg: 'Plan Expired! Please renew subscription.' });
+                }
             }
         }
 
@@ -216,17 +243,23 @@ app.post('/api/webhook/sms', async (req, res) => {
         // The external app sends structured JSON data directly
         const { secret_key, amount, trx_id, provider, sender, reference, ref_code, full_sms } = req.body;
 
+        // Cast to string to prevent NoSQL injection (e.g. { "$ne": null })
+        const safeTrxId = trx_id ? String(trx_id) : null;
+        const safeFullSms = full_sms ? String(full_sms) : "";
+        const safeReference = reference ? String(reference) : "";
+        const safeRefCode = ref_code ? String(ref_code) : "";
+
         // Extract reference ID from explicit field or parse from full SMS text
-        const refMatch = full_sms ? full_sms.match(/AL-PAY-[A-Z0-9]+/) : null;
-        const parsedRef = reference || ref_code || (refMatch ? refMatch[0] : "");
+        const refMatch = safeFullSms ? safeFullSms.match(/AL-PAY-[A-Z0-9]+/) : null;
+        const parsedRef = safeReference || safeRefCode || (refMatch ? refMatch[0] : "");
 
         // Verify Secret Key — only accept from .env
-        const expectedKey = process.env.WEBHOOK_SECRET || 'ALSMS_AUTO_VERIFY_123';
-        if (secret_key !== expectedKey) {
-            return res.status(401).json({ msg: 'Invalid secret key' });
+        const expectedKey = process.env.WEBHOOK_SECRET;
+        if (!expectedKey || secret_key !== expectedKey) {
+            return res.status(401).json({ msg: 'Invalid or unconfigured secret key' });
         }
 
-        if (!trx_id || !amount) {
+        if (!safeTrxId || !amount) {
             return res.status(400).json({ msg: "trx_id and amount are required" });
         }
 
@@ -237,8 +270,8 @@ app.post('/api/webhook/sms', async (req, res) => {
 
         // Detect Method from provider
         let method = 'bkash';
-        const lowerProvider = (provider || "").toLowerCase();
-        const lowerSender = (sender || "").toLowerCase();
+        const lowerProvider = (provider ? String(provider) : "").toLowerCase();
+        const lowerSender = (sender ? String(sender) : "").toLowerCase();
         
         if (lowerProvider.includes('nagad') || lowerSender.includes('nagad')) {
             method = 'nagad';
@@ -247,16 +280,16 @@ app.post('/api/webhook/sms', async (req, res) => {
         }
 
         // Check if transaction already exists
-        const existingTx = await Transaction.findOne({ transactionId: trx_id });
+        const existingTx = await Transaction.findOne({ transactionId: safeTrxId });
         if (existingTx) {
             return res.status(200).json({ msg: "Transaction already exists" });
         }
 
         // Save new transaction
         const newTx = new Transaction({
-            transactionId: trx_id,
+            transactionId: safeTrxId,
             amount: parsedAmount,
-            sender: sender || "Unknown",
+            sender: lowerSender || "Unknown",
             method: method,
             reference: parsedRef
         });
@@ -475,7 +508,12 @@ app.post('/api/login', rateLimitLogin, async (req, res) => {
         // identifier অথবা email দুটোই রিসিভ করার ব্যবস্থা রাখা হলো (সেফটির জন্য)
         const { identifier, email, password, deviceId, deviceName } = req.body; 
         
-        const loginId = identifier || email; // যদি identifier না থাকে তবে ইমেইল দেখবে
+        // NoSQL Injection Prevention: Cast to String
+        const loginIdRaw = identifier || email; // যদি identifier না থাকে তবে ইমেইল দেখবে
+        const loginId = loginIdRaw ? String(loginIdRaw) : null;
+        const safePassword = password ? String(password) : "";
+        const safeDeviceId = deviceId ? String(deviceId) : 'unknown_id';
+        const safeDeviceName = deviceName ? String(deviceName) : 'Unknown Device';
 
         if (!loginId) {
             return res.status(400).json({ msg: 'Email/Phone is required' });
@@ -490,7 +528,7 @@ app.post('/api/login', rateLimitLogin, async (req, res) => {
 
         if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
         
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(safePassword, user.password);
         if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
         if (user.isBlocked) return res.status(403).json({ msg: 'Your account has been blocked' });
@@ -515,18 +553,21 @@ app.post('/api/login', rateLimitLogin, async (req, res) => {
                     });
                 }
                 user.activeSessions.push({
-                    deviceId: deviceId || 'unknown_id',
-                    deviceName: deviceName || 'Unknown Device',
+                    deviceId: safeDeviceId,
+                    deviceName: safeDeviceName,
                     loginTime: new Date()
                 });
             }
             await user.save();
         }
 
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) return res.status(500).json({ msg: 'Server misconfiguration: JWT_SECRET missing' });
+
         const payload = { user: { id: user.id, role: user.role } };
         jwt.sign(
             payload,
-            process.env.JWT_SECRET || 'your_default_secret',
+            jwtSecret,
             { expiresIn: '365d' },
             (err, token) => {
                 if (err) throw err;
@@ -582,11 +623,17 @@ app.post('/api/register', rateLimitLogin, async (req, res) => {
 app.post('/api/logout', async (req, res) => {
     try {
         const { email, phone, deviceId } = req.body;
+        
+        // NoSQL Injection Prevention: Cast to String
+        const safeEmail = email ? String(email) : undefined;
+        const safePhone = phone ? String(phone) : undefined;
+        const safeDeviceId = deviceId ? String(deviceId) : undefined;
+        
         // Support both email and phone users
-        if (email) {
-            await User.updateOne({ email }, { $pull: { activeSessions: { deviceId } } });
-        } else if (phone) {
-            await User.updateOne({ phone }, { $pull: { activeSessions: { deviceId } } });
+        if (safeEmail) {
+            await User.updateOne({ email: safeEmail }, { $pull: { activeSessions: { deviceId: safeDeviceId } } });
+        } else if (safePhone) {
+            await User.updateOne({ phone: safePhone }, { $pull: { activeSessions: { deviceId: safeDeviceId } } });
         }
         res.json({ msg: 'Logged out successfully' });
     } catch (err) {
