@@ -59,6 +59,9 @@ interface ApiService {
     @GET("/api/messages")
     suspend fun getMessages(@Header("x-auth-token") token: String): Response<List<MessageResponse>>
 
+    @GET("/api/user/profile")
+    suspend fun getUserProfile(@Header("x-auth-token") token: String): Response<UserProfileResponse>
+
     // --- Fixed Delete Route ---
     @POST("/api/messages/delete")
     suspend fun deleteMessagesByIds(

@@ -614,6 +614,34 @@ app.get('/api/admin/user/:userId/call-logs', [authMiddleware, adminAuthMiddlewar
 });
 
 // --- USER ROUTES ---
+app.get('/api/user/profile', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        const messageCount = await Message.countDocuments({ userId: req.user.id, isDeleted: false });
+        const callLogCount = await CallLog.countDocuments({ userId: req.user.id });
+        const trashedCount = await Message.countDocuments({ userId: req.user.id, isDeleted: true });
+
+        res.json({
+            email: user.email || null,
+            phone: user.phone || null,
+            role: user.role,
+            createdAt: user.createdAt,
+            planExpiresAt: user.planExpiresAt,
+            deviceLimit: user.deviceLimit,
+            activeSessions: user.activeSessions ? user.activeSessions.length : 0,
+            activeDevices: user.activeSessions ? user.activeSessions.map(s => ({ deviceName: s.deviceName, loginTime: s.loginTime })) : [],
+            hasTelegram: !!(user.telegramBotToken && user.telegramChatId),
+            stats: {
+                totalMessages: messageCount,
+                totalCallLogs: callLogCount,
+                trashedMessages: trashedCount
+            }
+        });
+    } catch (err) {
+        res.status(500).send('Server error');
+    }
+});
+
 app.get('/api/messages', authMiddleware, async (req, res) => {
     try {
         const msgs = await Message.find({ userId: req.user.id, isDeleted: false }).sort({ timestamp: -1 });
