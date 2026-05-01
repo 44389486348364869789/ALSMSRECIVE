@@ -11,7 +11,57 @@ const app = express();
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors());
+
+// CORS — only allow specific origins
+const allowedOrigins = [
+    'http://localhost:3000',
+    process.env.ADMIN_ORIGIN || 'http://localhost:5000'
+];
+app.use(cors({
+    origin: function(origin, callback) {
+        // Allow mobile apps (no origin) and allowed origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(null, true); // Still allow for now — tighten after HTTPS
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'x-auth-token', 'x-device-id', 'x-webhook-secret']
+}));
+
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+// Rate limiter for login (brute force protection)
+const loginAttempts = new Map();
+const rateLimitLogin = (req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000; // 15 minutes
+    const maxAttempts = 10;
+
+    if (!loginAttempts.has(ip)) {
+        loginAttempts.set(ip, { count: 1, firstAttempt: now });
+        return next();
+    }
+    const record = loginAttempts.get(ip);
+    if (now - record.firstAttempt > windowMs) {
+        loginAttempts.set(ip, { count: 1, firstAttempt: now });
+        return next();
+    }
+    if (record.count >= maxAttempts) {
+        const waitMins = Math.ceil((windowMs - (now - record.firstAttempt)) / 60000);
+        return res.status(429).json({ msg: `Too many attempts. Try again in ${waitMins} minutes.` });
+    }
+    record.count++;
+    next();
+};
 
 // --- MongoDB Connect ---
 const dbURI = process.env.MONGODB_URI || "mongodb://localhost:27017/alsmsrecive";
@@ -268,8 +318,13 @@ const crypto = require('crypto');
 const axios = require('axios');
 
 async function verifyBinanceTransaction(orderIdToMatch, expectedAmountUSDT) {
-    const BINANCE_API_KEY = process.env.BINANCE_API_KEY || '4PmqYTo2sxRWOze7GSGucVj3xytO2dgAoRfo3bXoIAUHKj9vooLQDnkPjl0ulQ5f';
-    const BINANCE_SECRET_KEY = process.env.BINANCE_SECRET_KEY || 'srTePTkgNUhxQPVpeLrTqEC57CQfYoxcOxiTuNLokA1y6Sy4WAMdLW5mf9OuVssA';
+    // IMPORTANT: Binance keys must be in .env file — never hardcode
+    const BINANCE_API_KEY = process.env.BINANCE_API_KEY;
+    const BINANCE_SECRET_KEY = process.env.BINANCE_SECRET_KEY;
+    if (!BINANCE_API_KEY || !BINANCE_SECRET_KEY) {
+        console.error('[Binance] API keys not set in .env');
+        return false;
+    }
     const BASE_URL = "https://api.binance.com";
     
     try {
@@ -414,7 +469,7 @@ app.post('/api/broadcasts', [authMiddleware, adminAuthMiddleware], async (req, r
 });
 
 // Login Route (Fix: includes crash fix)
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', rateLimitLogin, async (req, res) => {
     try {
         // identifier অথবা email দুটোই রিসিভ করার ব্যবস্থা রাখা হলো (সেফটির জন্য)
         const { identifier, email, password, deviceId, deviceName } = req.body; 
@@ -733,7 +788,7 @@ const startCronJobs = () => {
 
 // --- Frontend ---
 // --- Payment Info Endpoint ---
-app.get('/api/payment-info', (req, res) => {
+app.get('/api/payment-info', authMiddleware, (req, res) => {
     res.json({
         bkash: "01981475404",
         nagad: "01981475404",
