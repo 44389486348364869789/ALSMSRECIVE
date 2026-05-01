@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -218,11 +218,10 @@ app.post('/api/webhook/sms', async (req, res) => {
         const refMatch = full_sms ? full_sms.match(/AL-PAY-[A-Z0-9]+/) : null;
         const parsedRef = reference || ref_code || (refMatch ? refMatch[0] : "");
 
-        // Verify Secret Key
-        const expectedKey = process.env.WEBHOOK_SECRET || "ALSMS_AUTO_VERIFY_123";
-        // Also support the user's legacy gateway secret key if needed, or stick to ours
-        if (secret_key !== expectedKey && secret_key !== "YOUR_GATEWAY_SECRET") { // Added fallback if they haven't updated the app's secret key
-            return res.status(401).json({ msg: "Invalid secret key" });
+        // Verify Secret Key — only accept from .env
+        const expectedKey = process.env.WEBHOOK_SECRET || 'ALSMS_AUTO_VERIFY_123';
+        if (secret_key !== expectedKey) {
+            return res.status(401).json({ msg: 'Invalid secret key' });
         }
 
         if (!trx_id || !amount) {
@@ -580,10 +579,12 @@ app.post('/api/register', rateLimitLogin, async (req, res) => {
 // Logout
 app.post('/api/logout', async (req, res) => {
     try {
-        const { email, deviceId } = req.body;
-        // ইমেইল না থাকলে শুধু ডিভাইস আইডি দিয়েও ডিলিট করার চেষ্টা করা যায় (অপশনাল)
-        if(email) {
-            await User.updateOne({ email: email }, { $pull: { activeSessions: { deviceId: deviceId } } });
+        const { email, phone, deviceId } = req.body;
+        // Support both email and phone users
+        if (email) {
+            await User.updateOne({ email }, { $pull: { activeSessions: { deviceId } } });
+        } else if (phone) {
+            await User.updateOne({ phone }, { $pull: { activeSessions: { deviceId } } });
         }
         res.json({ msg: 'Logged out successfully' });
     } catch (err) {

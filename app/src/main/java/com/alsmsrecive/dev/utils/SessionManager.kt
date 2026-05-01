@@ -26,6 +26,7 @@ class SessionManager(context: Context) {
         private const val TELEGRAM_BOT_TOKEN = "telegram_bot_token"
         private const val TELEGRAM_CHAT_ID = "telegram_chat_id"
         private const val USER_EMAIL = "user_email"
+        private const val USER_PHONE = "user_phone"
         private const val PLAN_EXPIRY = "plan_expiry"
         private const val LOGIN_PASSWORD = "login_password"
 
@@ -102,6 +103,14 @@ class SessionManager(context: Context) {
 
     fun getUserEmail(): String? {
         return sharedPreferences.getString(USER_EMAIL, null)
+    }
+
+    fun saveUserPhone(phone: String) {
+        sharedPreferences.edit().putString(USER_PHONE, phone).apply()
+    }
+
+    fun getUserPhone(): String? {
+        return sharedPreferences.getString(USER_PHONE, null)
     }
 
     fun saveUiMode(mode: UiMode) {

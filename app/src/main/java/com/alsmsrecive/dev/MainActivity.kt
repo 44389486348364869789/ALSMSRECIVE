@@ -269,7 +269,12 @@ class MainActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     sessionManager.saveAuthToken(body.token)
-                    sessionManager.saveUserEmail(identifier)
+                    // Save email OR phone based on identifier type
+                    if (identifier.contains("@")) {
+                        sessionManager.saveUserEmail(identifier)
+                    } else {
+                        sessionManager.saveUserPhone(identifier)
+                    }
                     sessionManager.savePlanExpiry(body.planExpiresAt)
                     sessionManager.saveUiMode(UiMode.SECURITY)
                     sessionManager.saveUserPassword(password) // এনক্রিপশনের জন্য সেভ
@@ -341,7 +346,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleLogout() {
         showLoading(true, progressBarSync, btnSync)
         lifecycleScope.launch {
-            try { apiService.logoutUser(LogoutRequest(sessionManager.getUserEmail() ?: "", getUniqueDeviceId())) } catch (e: Exception) {}
+            try { apiService.logoutUser(LogoutRequest(email = sessionManager.getUserEmail(), phone = sessionManager.getUserPhone(), deviceId = getUniqueDeviceId())) } catch (e: Exception) {}
             sessionManager.clearAuthToken()
             sessionManager.saveUiMode(UiMode.SIMPLE)
             showToast("Logged out")
