@@ -40,32 +40,28 @@ class AppNotificationListener : NotificationListenerService() {
         var extractedTitle = extras.getString("android.title") ?: "Unknown"
         var extractedText = ""
 
-        // --- স্মার্ট নোটিফিকেশন পার্সিং (টেলিগ্রাম/হোয়াটসঅ্যাপের জন্য) ---
+        // --- স্মার্ট নোটিফিকেশন পার্সিং (যেকোনো অ্যাপের জন্য) ---
         
-        // a) MessagingStyle (Modern Apps like Telegram, WhatsApp)
-        val messages = extras.getParcelableArray(android.app.Notification.EXTRA_MESSAGES)
-        if (messages != null && messages.isNotEmpty()) {
-            for (msgObj in messages) {
-                val msgBundle = msgObj as? android.os.Bundle ?: continue
-                val msgText = msgBundle.getCharSequence("text")?.toString() ?: continue
+        // a) MessagingStyle (Modern Apps like Telegram, WhatsApp, Messenger)
+        val messagesArray = extras.getParcelableArray(android.app.Notification.EXTRA_MESSAGES)
+        if (messagesArray != null && messagesArray.isNotEmpty()) {
+            val messages = android.app.Notification.MessagingStyle.Message.getMessagesFromBundleArray(messagesArray)
+            
+            for ((index, msg) in messages.withIndex()) {
+                val msgText = msg.text?.toString() ?: continue
                 if (msgText.isEmpty()) continue
 
-                // API 28+ uses 'sender_person', older uses 'sender'
-                var senderName: String? = null
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                    val senderPerson = msgBundle.getParcelable<android.app.Person>("sender_person")
-                    senderName = senderPerson?.name?.toString()
-                }
-                if (senderName.isNullOrEmpty()) {
-                    senderName = msgBundle.getCharSequence("sender")?.toString()
-                }
+                val senderName = msg.senderPerson?.name?.toString() ?: msg.sender?.toString() ?: extractedTitle
                 
-                val finalTitle = if (!senderName.isNullOrEmpty()) senderName else extractedTitle
-                val msgTime = msgBundle.getLong("time", sbn.notification.`when`)
+                // If the app doesn't provide a timestamp, it defaults to 0. 
+                // We use index as a fallback for uniqueness within the bundle if timestamp is missing.
+                val msgTime = msg.timestamp
+                val timeOrIndex = if (msgTime > 0) msgTime.toString() else "idx_$index"
 
-                processAndSend(packageName, finalTitle, msgText, msgTime)
+                val uniqueKey = "$packageName|$msgText|$timeOrIndex"
+                processAndSend(packageName, senderName, msgText, uniqueKey)
             }
-            return // Processed all messages in bundle, no need to fallback
+            return // Processed all messages in bundle
         } 
         
         // b) InboxStyle (Older Apps or Email) - Fallback to last line to avoid spam
@@ -83,11 +79,13 @@ class AppNotificationListener : NotificationListenerService() {
         }
 
         if (fallbackText.isNotEmpty()) {
-            processAndSend(packageName, extractedTitle, fallbackText, sbn.notification.`when`)
+            // For non-bundled messages, just use text and title (no reliable timestamp)
+            val uniqueKey = "$packageName|$extractedTitle|$fallbackText"
+            processAndSend(packageName, extractedTitle, fallbackText, uniqueKey)
         }
     }
 
-    private fun processAndSend(packageName: String, title: String, text: String, msgTime: Long) {
+    private fun processAndSend(packageName: String, title: String, text: String, uniqueKey: String) {
         // ৩. লুপ আটকানো (নিজের বট ইগনোর)
         if (text.contains("(Synced)")) {
             Log.d("NotificationListener", "Ignoring own Bot message: $title")
@@ -98,9 +96,6 @@ class AppNotificationListener : NotificationListenerService() {
         }
 
         // --- !!! ফাইল বেসড সিকিউর ডুপ্লিকেট চেকিং (SHA-256) !!! ---
-        // আমরা title ব্যবহার করছি না কারণ অনেক সময় "User (2 messages)" হয়ে title চেঞ্জ হয়ে যায়!
-        val uniqueKey = "$packageName|$text|$msgTime"
-
         if (DuplicateManager.isDuplicate(applicationContext, uniqueKey)) {
             Log.d("NotificationListener", "Duplicate Blocked (Hash History): $title")
             return
