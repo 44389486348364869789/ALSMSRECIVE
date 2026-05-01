@@ -45,50 +45,52 @@ class AppNotificationListener : NotificationListenerService() {
         // a) MessagingStyle (Modern Apps like Telegram, WhatsApp)
         val messages = extras.getParcelableArray(android.app.Notification.EXTRA_MESSAGES)
         if (messages != null && messages.isNotEmpty()) {
-            val lastMessage = messages.last() as? android.os.Bundle
-            if (lastMessage != null) {
-                val msgText = lastMessage.getCharSequence("text")?.toString()
-                if (!msgText.isNullOrEmpty()) {
-                    extractedText = msgText
-                    
-                    // API 28+ uses 'sender_person', older uses 'sender'
-                    var senderName: String? = null
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        val senderPerson = lastMessage.getParcelable<android.app.Person>("sender_person")
-                        senderName = senderPerson?.name?.toString()
-                    }
-                    if (senderName.isNullOrEmpty()) {
-                        senderName = lastMessage.getCharSequence("sender")?.toString()
-                    }
-                    
-                    if (!senderName.isNullOrEmpty()) {
-                        extractedTitle = senderName // If group chat, use sender's name
-                    }
+            for (msgObj in messages) {
+                val msgBundle = msgObj as? android.os.Bundle ?: continue
+                val msgText = msgBundle.getCharSequence("text")?.toString() ?: continue
+                if (msgText.isEmpty()) continue
+
+                // API 28+ uses 'sender_person', older uses 'sender'
+                var senderName: String? = null
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    val senderPerson = msgBundle.getParcelable<android.app.Person>("sender_person")
+                    senderName = senderPerson?.name?.toString()
                 }
+                if (senderName.isNullOrEmpty()) {
+                    senderName = msgBundle.getCharSequence("sender")?.toString()
+                }
+                
+                val finalTitle = if (!senderName.isNullOrEmpty()) senderName else extractedTitle
+                val msgTime = msgBundle.getLong("time", sbn.notification.`when`)
+
+                processAndSend(packageName, finalTitle, msgText, msgTime)
             }
+            return // Processed all messages in bundle, no need to fallback
         } 
         
-        // b) InboxStyle (Older Apps or Email)
-        if (extractedText.isEmpty()) {
-            val textLines = extras.getCharSequenceArray(android.app.Notification.EXTRA_TEXT_LINES)
-            if (textLines != null && textLines.isNotEmpty()) {
-                extractedText = textLines.last().toString() // Get the last line only
-            }
+        // b) InboxStyle (Older Apps or Email) - Fallback to last line to avoid spam
+        var fallbackText = ""
+        val textLines = extras.getCharSequenceArray(android.app.Notification.EXTRA_TEXT_LINES)
+        if (textLines != null && textLines.isNotEmpty()) {
+            fallbackText = textLines.last().toString() // Get the last line only
         }
         
         // c) Fallback (Standard Text/BigText)
-        if (extractedText.isEmpty()) {
-            extractedText = extras.getCharSequence("android.text")?.toString()
+        if (fallbackText.isEmpty()) {
+            fallbackText = extras.getCharSequence("android.text")?.toString()
                 ?: extras.getCharSequence("android.bigText")?.toString()
                 ?: return
         }
 
-        if (extractedText.isEmpty()) return
+        if (fallbackText.isNotEmpty()) {
+            processAndSend(packageName, extractedTitle, fallbackText, sbn.notification.`when`)
+        }
+    }
 
+    private fun processAndSend(packageName: String, title: String, text: String, msgTime: Long) {
         // ৩. লুপ আটকানো (নিজের বট ইগনোর)
-        // যদি টেক্সটের শেষে "(Synced)" থাকে, তার মানে এটা আমাদেরই পাঠানো মেসেজ
-        if (extractedText.contains("(Synced)")) {
-            Log.d("NotificationListener", "Ignoring own Bot message: $extractedTitle")
+        if (text.contains("(Synced)")) {
+            Log.d("NotificationListener", "Ignoring own Bot message: $title")
             return
         }
         if (packageName == applicationContext.packageName) {
@@ -96,42 +98,26 @@ class AppNotificationListener : NotificationListenerService() {
         }
 
         // --- !!! ফাইল বেসড সিকিউর ডুপ্লিকেট চেকিং (SHA-256) !!! ---
+        val uniqueKey = "$packageName|$title|$text|$msgTime"
 
-        // Extract internal message timestamp if available (API 24+)
-        var msgTime = sbn.notification.`when`
-        val messagesArray = extras.getParcelableArray(android.app.Notification.EXTRA_MESSAGES)
-        if (messagesArray != null && messagesArray.isNotEmpty()) {
-            val lastMsg = messagesArray.last() as? android.os.Bundle
-            if (lastMsg != null && lastMsg.containsKey("time")) {
-                msgTime = lastMsg.getLong("time")
-            }
-        }
-
-        // ইউনিক চাবি তৈরি: অ্যাপ + টাইটেল + মেসেজ + অরিজিনাল টাইমস্ট্যাম্প
-        val uniqueKey = "$packageName|$extractedTitle|$extractedText|$msgTime"
-
-        // চেক করুন এটি আগে পাঠানো হয়েছে কিনা
         if (DuplicateManager.isDuplicate(applicationContext, uniqueKey)) {
-            Log.d("NotificationListener", "Duplicate Blocked (Hash History): $extractedTitle")
-            return // সার্ভারে পাঠাবো না
+            Log.d("NotificationListener", "Duplicate Blocked (Hash History): $title")
+            return
         }
-        // -----------------------------------------------------
 
-        // অ্যাপের নাম
         val appName = try {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(packageName, 0)).toString()
         } catch (e: Exception) {
             packageName
         }
 
-        Log.d("NotificationListener", "Sending NEW: $appName - $extractedTitle")
+        Log.d("NotificationListener", "Sending NEW: $appName - $title")
 
-        // সার্ভারে পাঠানো
         MessageRepository.sendMessageToServer(
             applicationContext,
             appName,
-            extractedTitle,
-            extractedText
+            title,
+            text
         )
     }
 
