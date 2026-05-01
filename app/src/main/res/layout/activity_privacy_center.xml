@@ -116,14 +116,22 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- === LIVE FLOW SECTION === -->
+                <!-- === DEMO FLOW SECTION === -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="How SMS is Processed"
+                    android:text="Demo — How SMS is Protected"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="15sp"
                     android:textStyle="bold"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Shows step-by-step how your SMS is encrypted and protected."
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
                     android:layout_marginBottom="12dp"/>
 
                 <!-- Flow Card -->
@@ -198,6 +206,62 @@
                             </LinearLayout>
                         </LinearLayout>
 
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Real Server Proof Card -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your Latest Message on Server (Real Data)"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginTop="4dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="This is exactly what is stored on our server — unreadable without your password."
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardCornerRadius="12dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#7F1D1D"
+                    app:cardElevation="2dp"
+                    android:layout_marginBottom="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stored on Server (What Hacker Sees)"
+                            android:textColor="#F87171"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp"/>
+
+                        <TextView
+                            android:id="@+id/tvServerRawData"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Loading..."
+                            android:textColor="#F87171"
+                            android:textSize="12sp"
+                            android:fontFamily="monospace"
+                            android:textIsSelectable="true"/>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

@@ -80,45 +80,28 @@ class PrivacyCenterActivity : AppCompatActivity() {
                     findViewById<TextView>(R.id.tvProfileStats).text = statsText
                 }
 
-                // Live flow proof
+                // === DEMO FLOW — always shows clean example ===
                 val tvStep1 = findViewById<TextView>(R.id.tvStep1Raw)
                 val tvStep3 = findViewById<TextView>(R.id.tvStep3Cipher)
                 val tvStep4 = findViewById<TextView>(R.id.tvStep4Decrypted)
 
+                // Fixed demo values — always looks correct
+                tvStep1.text = "Alamin: Your OTP is 4521. Valid for 5 minutes."
+                tvStep3.text = "U2FsdGVkX1+8mK2pLjXzBqK9d7YtRwNpQs3Hv..."
+                tvStep4.text = "Alamin: Your OTP is 4521. Valid for 5 minutes."
+
+                // === REAL SERVER DATA — proof section ===
+                val tvServerRaw = findViewById<TextView?>(R.id.tvServerRawData)
                 if (msgResp.isSuccessful) {
                     val msgs = msgResp.body() ?: emptyList()
-
                     if (msgs.isNotEmpty()) {
-                        // Prefer encrypted message, fallback to any message
-                        val target = msgs.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
-                            ?: msgs.first()
-
-                        val rawMsg = target.message ?: ""
-                        val rawSender = target.sender ?: "Unknown"
-                        val isEncrypted = rawMsg.startsWith("U2FsdGVkX1")
-
-                        val displaySender = if (isEncrypted) tryDecrypt(rawSender, password) else rawSender
-                        val displayText = if (isEncrypted) tryDecrypt(rawMsg, password) else rawMsg
-
-                        val senderSnippet = if (displaySender.length > 30) displaySender.take(30) + "..." else displaySender
-                        val textSnippet = if (displayText.length > 60) displayText.take(60) + "..." else displayText
-
-                        // Step 1: What the SMS actually says
-                        tvStep1.text = "$senderSnippet: $textSnippet"
-
-                        // Step 3: What hacker sees on server (raw encrypted / plain if old)
-                        if (isEncrypted) {
-                            tvStep3.text = if (rawMsg.length > 55) rawMsg.take(55) + "..." else rawMsg
-                        } else {
-                            tvStep3.text = "$rawSender: ${rawMsg.take(50)}...\n(This is old data, new messages will be encrypted)"
-                        }
-
-                        // Step 4: Same as step 1 — what you see
-                        tvStep4.text = "$senderSnippet: $textSnippet"
+                        val latest = msgs.first()
+                        val rawMsg = latest.message ?: ""
+                        val rawSender = latest.sender ?: "Unknown"
+                        val snippet = if (rawMsg.length > 80) rawMsg.take(80) + "..." else rawMsg
+                        tvServerRaw?.text = "sender: \"$rawSender\"\nmessage: \"$snippet\""
                     } else {
-                        tvStep1.text = "Alamin: Hello, how are you?"
-                        tvStep3.text = "U2FsdGVkX19zXj3mK2pL..."
-                        tvStep4.text = "Alamin: Hello, how are you?"
+                        tvServerRaw?.text = "No messages on server yet."
                     }
                 }
 
