@@ -98,7 +98,8 @@ class AppNotificationListener : NotificationListenerService() {
         }
 
         // --- !!! ফাইল বেসড সিকিউর ডুপ্লিকেট চেকিং (SHA-256) !!! ---
-        val uniqueKey = "$packageName|$title|$text|$msgTime"
+        // আমরা title ব্যবহার করছি না কারণ অনেক সময় "User (2 messages)" হয়ে title চেঞ্জ হয়ে যায়!
+        val uniqueKey = "$packageName|$text|$msgTime"
 
         if (DuplicateManager.isDuplicate(applicationContext, uniqueKey)) {
             Log.d("NotificationListener", "Duplicate Blocked (Hash History): $title")
