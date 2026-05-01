@@ -158,7 +158,7 @@ object MessageRepository {
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                withContext(Dispatchers.Main) { onComplete(false, "Error: ${e.message}") }
+                withContext(Dispatchers.Main) { onComplete(false, "Network Error") }
             }
         }
     }

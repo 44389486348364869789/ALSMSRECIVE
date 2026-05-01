@@ -156,6 +156,20 @@ class PlanActivity : AppCompatActivity() {
     }
 
     private fun showBuyPlanSheet(planType: Int) {
+        val maxDevices = sessionManager.getDeviceLimit()
+        val requestedDevices = when (planType) {
+            18 -> 1
+            29 -> 2
+            49 -> 5
+            99 -> 21
+            else -> 1
+        }
+        
+        if (!sessionManager.isPlanExpired() && requestedDevices < maxDevices) {
+            showToast("You cannot downgrade your plan while it is still active.")
+            return
+        }
+
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_buy_plan, null)
         bottomSheetDialog.setContentView(view)
@@ -179,6 +193,7 @@ class PlanActivity : AppCompatActivity() {
         
         var selectedMethod = ""
         var currentOrderId = ""
+        var currentReferenceId = ""
 
         tvSheetTitle.text = "Buy Plan ($planType BDT)"
 
@@ -192,18 +207,10 @@ class PlanActivity : AppCompatActivity() {
             
             if (selectedMethod.isNotEmpty()) {
                 tvInstructions.visibility = View.VISIBLE
-                tilTrxId.visibility = View.VISIBLE
+                tilTrxId.visibility = View.GONE
                 btnSubmitOrder.isEnabled = false
                 btnSubmitOrder.text = "Creating Order..."
-
-                val instructionText = if (selectedMethod == "binance") {
-                    tilTrxId.hint = "Enter Binance Order ID"
-                    "Send the equivalent USDT amount to Binance Pay ID. Then enter the Order ID below."
-                } else {
-                    tilTrxId.hint = "Enter TrxID"
-                    "Send exactly $planType BDT to the number above via 'Send Money'. Then enter the TrxID below."
-                }
-                tvInstructions.text = instructionText
+                tvInstructions.text = "Please wait..."
 
                 // Call create order
                 lifecycleScope.launch {
@@ -213,9 +220,15 @@ class PlanActivity : AppCompatActivity() {
                         val res = apiService.createOrder(token, req)
                         if (res.isSuccessful && res.body() != null) {
                             currentOrderId = res.body()!!.orderId
-                            if (selectedMethod == "binance") {
-                                tvInstructions.text = "Send exactly ${res.body()!!.amountUSDT} USDT to Binance Pay ID. Then enter the Order ID below."
+                            currentReferenceId = res.body()!!.referenceId
+                            
+                            val instructionText = if (selectedMethod == "binance") {
+                                "Send exactly ${res.body()!!.amountUSDT} USDT to Binance Pay ID. \n\nIMPORTANT: Enter Reference ${currentReferenceId} in the Note/Remark.\n\nAfter paying, click Verify."
+                            } else {
+                                "Send exactly $planType BDT to the number above via 'Send Money'. \n\nIMPORTANT: Enter Reference ${currentReferenceId} during payment.\n\nAfter paying, click Verify."
                             }
+                            tvInstructions.text = instructionText
+
                             btnSubmitOrder.isEnabled = true
                             btnSubmitOrder.text = "Verify Payment"
                         } else {
@@ -231,11 +244,6 @@ class PlanActivity : AppCompatActivity() {
         }
 
         btnSubmitOrder.setOnClickListener {
-            val txId = etTrxId.text.toString().trim()
-            if (txId.isEmpty()) {
-                showToast("Please enter Transaction ID")
-                return@setOnClickListener
-            }
             if (currentOrderId.isEmpty()) {
                 showToast("Invalid Order ID")
                 return@setOnClickListener
@@ -247,7 +255,7 @@ class PlanActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 try {
                     val token = sessionManager.getAuthToken() ?: return@launch
-                    val req = VerifyOrderRequest(currentOrderId, txId)
+                    val req = VerifyOrderRequest(currentOrderId)
                     val res = apiService.verifyOrder(token, req)
                     if (res.isSuccessful && res.body() != null) {
                         showToast("Plan Upgraded Successfully!")
@@ -259,13 +267,12 @@ class PlanActivity : AppCompatActivity() {
                         displayPlanInfo()
                         bottomSheetDialog.dismiss()
                     } else {
-                        val errorStr = res.errorBody()?.string() ?: "Verification Failed"
-                        showToast(errorStr)
+                        showToast("Verification Failed")
                         btnSubmitOrder.isEnabled = true
                         btnSubmitOrder.text = "Try Again"
                     }
                 } catch (e: Exception) {
-                    showToast("Error: ${e.message}")
+                    showToast("Network Error")
                     btnSubmitOrder.isEnabled = true
                     btnSubmitOrder.text = "Try Again"
                 }

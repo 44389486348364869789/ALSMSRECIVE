@@ -8,13 +8,14 @@ data class CreateOrderRequest(
 data class CreateOrderResponse(
     val msg: String,
     val orderId: String,
+    val referenceId: String,
     val amountBDT: Int,
     val amountUSDT: Double
 )
 
 data class VerifyOrderRequest(
     val orderId: String,
-    val transactionId: String
+    val transactionId: String? = null
 )
 
 data class VerifyOrderResponse(

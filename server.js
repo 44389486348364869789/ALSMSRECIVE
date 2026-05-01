@@ -93,9 +93,10 @@ const OrderSchema = new mongoose.Schema({
     deviceLimit: { type: Number, required: true },
     paymentMethod: { type: String, enum: ['bkash', 'nagad', 'binance', 'none'], default: 'none' },
     status: { type: String, enum: ['pending', 'completed', 'expired'], default: 'pending' },
-    transactionId: { type: String, default: "" }, // Filled when verified
+    transactionId: { type: String, default: "" },
+    referenceId: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
-    expiresAt: { type: Date, default: () => Date.now() + 60*60*1000 } // 1 hour expiry
+    expiresAt: { type: Date, default: () => Date.now() + 60*60*1000 }
 });
 const Order = mongoose.model('Order', OrderSchema);
 
@@ -104,6 +105,7 @@ const TransactionSchema = new mongoose.Schema({
     amount: { type: Number, required: true },
     sender: { type: String },
     method: { type: String, enum: ['bkash', 'nagad', 'binance'], required: true },
+    reference: { type: String, default: "" },
     isUsed: { type: Boolean, default: false },
     usedByUserId: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now }
@@ -125,8 +127,19 @@ const authMiddleware = async (req, res, next) => {
         if (user.isBlocked) return res.status(403).json({ msg: 'Your account has been blocked.' });
 
         // প্ল্যান চেক (অ্যাডমিন বাদে)
-        if (user.role !== 'admin' && user.planExpiresAt && new Date() > new Date(user.planExpiresAt)) {
-            return res.status(402).json({ msg: 'Plan Expired! Please renew subscription.' });
+        if (user.role !== 'admin') {
+            if (user.planExpiresAt && new Date() > new Date(user.planExpiresAt)) {
+                return res.status(402).json({ msg: 'Plan Expired! Please renew subscription.' });
+            }
+
+            // সেশন ভেরিফিকেশন (x-device-id)
+            const deviceId = req.header('x-device-id');
+            if (deviceId && user.activeSessions) {
+                const sessionExists = user.activeSessions.some(s => s.deviceId === deviceId);
+                if (!sessionExists) {
+                    return res.status(401).json({ msg: 'Device session expired. Please log in again.' });
+                }
+            }
         }
 
         req.user = user;
@@ -158,7 +171,11 @@ app.post('/api/webhook/sms', async (req, res) => {
     
     try {
         // The external app sends structured JSON data directly
-        const { secret_key, amount, trx_id, provider, sender } = req.body;
+        const { secret_key, amount, trx_id, provider, sender, reference, ref_code, full_sms } = req.body;
+
+        // Extract reference ID from explicit field or parse from full SMS text
+        const refMatch = full_sms ? full_sms.match(/AL-PAY-[A-Z0-9]+/) : null;
+        const parsedRef = reference || ref_code || (refMatch ? refMatch[0] : "");
 
         // Verify Secret Key
         const expectedKey = process.env.WEBHOOK_SECRET || "ALSMS_AUTO_VERIFY_123";
@@ -198,7 +215,8 @@ app.post('/api/webhook/sms', async (req, res) => {
             transactionId: trx_id,
             amount: parsedAmount,
             sender: sender || "Unknown",
-            method: method
+            method: method,
+            reference: parsedRef
         });
 
         await newTx.save();
@@ -226,6 +244,15 @@ app.post('/api/plans/create-order', authMiddleware, async (req, res) => {
         else {
             return res.status(400).json({ msg: "Invalid plan type" });
         }
+        
+        if (req.user.role !== 'admin' && req.user.planExpiresAt && new Date() < new Date(req.user.planExpiresAt)) {
+            if (deviceLimit < req.user.deviceLimit) {
+                return res.status(400).json({ msg: "Cannot downgrade plan while current plan is active." });
+            }
+        }
+
+        const cryptoObj = require('crypto');
+        const referenceId = 'AL-PAY-' + cryptoObj.randomBytes(4).toString('hex').toUpperCase();
 
         const newOrder = new Order({
             userId: req.user._id,
@@ -233,11 +260,12 @@ app.post('/api/plans/create-order', authMiddleware, async (req, res) => {
             amountBDT,
             amountUSDT,
             deviceLimit,
-            paymentMethod: paymentMethod || 'none'
+            paymentMethod: paymentMethod || 'none',
+            referenceId
         });
 
         const savedOrder = await newOrder.save();
-        res.json({ msg: "Order created", orderId: savedOrder._id, amountBDT, amountUSDT });
+        res.json({ msg: "Order created", orderId: savedOrder._id, referenceId, amountBDT, amountUSDT });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -268,10 +296,9 @@ async function verifyBinanceTransaction(orderIdToMatch, expectedAmountUSDT) {
             const transactions = response.data.data;
             for (let tx of transactions) {
                 const amountFloat = parseFloat(tx.amount || '0');
-                if (amountFloat > 0 && tx.orderId === orderIdToMatch) {
-                    // Check amount. Give a tiny margin of error or just require it to be strictly greater/equal.
-                    // Actually, if the user paid at least the required amount, approve.
-                    if (amountFloat >= (expectedAmountUSDT - 0.05)) {
+                if (amountFloat >= (expectedAmountUSDT - 0.05)) {
+                    // Check if the reference ID is somewhere in the Binance transaction data (e.g., Note/Remark)
+                    if (JSON.stringify(tx).includes(orderIdToMatch)) {
                         return true;
                     }
                 }
@@ -287,7 +314,7 @@ async function verifyBinanceTransaction(orderIdToMatch, expectedAmountUSDT) {
 // Verify Order
 app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
     try {
-        const { orderId, transactionId } = req.body; // transactionId can be Bkash TrxID or Binance OrderID
+        const { orderId } = req.body; // transactionId is no longer needed from user
 
         const order = await Order.findById(orderId);
         if (!order) return res.status(404).json({ msg: "Order not found" });
@@ -302,19 +329,19 @@ app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
         let isVerified = false;
 
         if (order.paymentMethod === 'binance') {
-            isVerified = await verifyBinanceTransaction(transactionId, order.amountUSDT);
+            isVerified = await verifyBinanceTransaction(order.referenceId, order.amountUSDT);
             if (!isVerified) {
-                return res.status(400).json({ msg: "Binance transaction not found or amount insufficient." });
+                return res.status(400).json({ msg: "Binance payment not found. Make sure you included the Reference ID in the Note/Remark." });
             }
-            order.transactionId = transactionId;
+            order.transactionId = order.referenceId;
         } else {
-            // Local Webhook DB check (Bkash/Nagad)
-            const tx = await Transaction.findOne({ transactionId: transactionId });
+            // Local Webhook DB check (Bkash/Nagad) matching reference
+            const tx = await Transaction.findOne({ reference: order.referenceId, method: order.paymentMethod });
             if (!tx) {
-                return res.status(404).json({ msg: "Transaction not found in our system. Please wait 1-2 mins and try again." });
+                return res.status(404).json({ msg: "Payment not found. Please ensure you used the exact Reference ID and wait 1-2 mins." });
             }
             if (tx.isUsed) {
-                return res.status(400).json({ msg: "This Transaction ID has already been used." });
+                return res.status(400).json({ msg: "This payment has already been used." });
             }
             if (tx.amount < order.amountBDT) {
                 return res.status(400).json({ msg: `Insufficient amount. Required: ${order.amountBDT}, Found: ${tx.amount}` });
@@ -325,7 +352,7 @@ app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
             tx.usedByUserId = req.user._id.toString();
             await tx.save();
             isVerified = true;
-            order.transactionId = transactionId;
+            order.transactionId = tx.transactionId; // Save the actual provider TrxID
         }
 
         if (isVerified) {
@@ -342,6 +369,12 @@ app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
             
             user.planExpiresAt = currentExpiry;
             user.deviceLimit = order.deviceLimit;
+
+            // Handle active sessions overflow on downgrade
+            if (user.activeSessions && user.activeSessions.length > order.deviceLimit) {
+                user.activeSessions = user.activeSessions.slice(-order.deviceLimit);
+            }
+
             await user.save();
 
             const activeCount = user.activeSessions ? user.activeSessions.length : 0;

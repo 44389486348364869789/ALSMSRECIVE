@@ -135,7 +135,7 @@ class TrashActivity : AppCompatActivity() {
                     showToast("Failed to load trash")
                 }
             } catch (e: Exception) {
-                showToast("Network error: ${e.message}")
+                showToast("Network Error")
             } finally {
                 showLoading(false)
             }
@@ -163,7 +163,7 @@ class TrashActivity : AppCompatActivity() {
                     showToast("Failed to restore messages")
                 }
             } catch (e: Exception) {
-                showToast("Network error: ${e.message}")
+                showToast("Network Error")
             } finally {
                 showLoading(false)
             }
@@ -221,7 +221,7 @@ class TrashActivity : AppCompatActivity() {
                     showToast("Failed to delete messages")
                 }
             } catch (e: Exception) {
-                showToast("Network error: ${e.message}")
+                showToast("Network Error")
             } finally {
                 showLoading(false)
             }

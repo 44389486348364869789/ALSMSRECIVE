@@ -93,6 +93,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         sessionManager = SessionManager(applicationContext)
+        val deviceId = android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+        ApiClient.setDeviceId(deviceId)
         bindViews()
         checkTokenAndSetupViews()
         fetchActiveBroadcast()
@@ -296,7 +298,7 @@ class MainActivity : AppCompatActivity() {
                     } else if(response.code() == 403) showToast("Account Blocked")
                     else showToast("Invalid Credentials")
                 }
-            } catch (e: Exception) { showToast("Error: ${e.message}") }
+            } catch (e: Exception) { showToast("Network Error") }
             finally { showLoading(false, progressBarLogin, btnLogin) }
         }
     }
@@ -329,8 +331,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 val response = apiService.registerUser(RegisterRequest(email, phone, password))
                 if (response.isSuccessful) { showToast("Registered! Login now."); registerDialog?.dismiss() }
-                else showToast("Failed: " + (response.errorBody()?.string() ?: "Error"))
-            } catch (e: Exception) { showToast("Error: ${e.message}") }
+                else showToast("Network Error")
+            } catch (e: Exception) { showToast("Network Error") }
             finally { showLoading(false, progressBarLogin, btn) }
         }
     }
@@ -390,7 +392,7 @@ class MainActivity : AppCompatActivity() {
                     
                 } else handleApiError(response.code())
             } catch (e: Exception) {
-                showToast("Sync failed: ${e.message}")
+                showToast("Network Error")
             } finally {
                 showLoading(false, progressBarSync, btnSync)
             }
@@ -428,7 +430,7 @@ class MainActivity : AppCompatActivity() {
                 if (apiService.trashMessagesByIds(sessionManager.getAuthToken()!!, TrashRequest(selectedIds)).isSuccessful) {
                     showToast("Trashed"); syncMessagesFromServer()
                 }
-            } catch (e: Exception) { showToast("Error") } finally { showLoading(false, progressBarSync, btnSync) }
+            } catch (e: Exception) { showToast("Network Error") } finally { showLoading(false, progressBarSync, btnSync) }
         }
     }
 
@@ -441,7 +443,7 @@ class MainActivity : AppCompatActivity() {
                 if (apiService.deleteAllMessages(sessionManager.getAuthToken()!!).isSuccessful) {
                     showToast("All trashed"); syncMessagesFromServer()
                 }
-            } catch (e: Exception) { showToast("Error") } finally { showLoading(false, progressBarSync, btnSync) }
+            } catch (e: Exception) { showToast("Network Error") } finally { showLoading(false, progressBarSync, btnSync) }
         }
     }
 

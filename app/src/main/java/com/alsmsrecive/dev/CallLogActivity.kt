@@ -69,7 +69,7 @@ class CallLogActivity : AppCompatActivity() {
                     showToast("Failed to load call logs")
                 }
             } catch (e: Exception) {
-                showToast("Network error: ${e.message}")
+                showToast("Network Error")
             } finally {
                 showLoading(false)
             }
