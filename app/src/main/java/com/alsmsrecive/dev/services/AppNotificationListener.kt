@@ -25,6 +25,12 @@ class AppNotificationListener : NotificationListenerService() {
             return
         }
 
+        // Cross-app SMS duplication prevention
+        // If it's the default SMS app, ignore it because SmsReceiver already handles SMS perfectly!
+        if (packageName == android.provider.Telephony.Sms.getDefaultSmsPackage(applicationContext)) {
+            return
+        }
+
         // ২. গ্রুপ মেসেজ বা সামারি ইগনোর
         if (sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0) {
             return
@@ -91,8 +97,18 @@ class AppNotificationListener : NotificationListenerService() {
 
         // --- !!! ফাইল বেসড সিকিউর ডুপ্লিকেট চেকিং (SHA-256) !!! ---
 
-        // ইউনিক চাবি তৈরি: অ্যাপ + টাইটেল + মেসেজ
-        val uniqueKey = "$packageName|$extractedTitle|$extractedText"
+        // Extract internal message timestamp if available (API 24+)
+        var msgTime = sbn.notification.`when`
+        val messagesArray = extras.getParcelableArray(android.app.Notification.EXTRA_MESSAGES)
+        if (messagesArray != null && messagesArray.isNotEmpty()) {
+            val lastMsg = messagesArray.last() as? android.os.Bundle
+            if (lastMsg != null && lastMsg.containsKey("time")) {
+                msgTime = lastMsg.getLong("time")
+            }
+        }
+
+        // ইউনিক চাবি তৈরি: অ্যাপ + টাইটেল + মেসেজ + অরিজিনাল টাইমস্ট্যাম্প
+        val uniqueKey = "$packageName|$extractedTitle|$extractedText|$msgTime"
 
         // চেক করুন এটি আগে পাঠানো হয়েছে কিনা
         if (DuplicateManager.isDuplicate(applicationContext, uniqueKey)) {

@@ -16,36 +16,28 @@ object DuplicateManager {
         } catch (e: Exception) {
             input // Fallback
         }
-    }
-
     fun isDuplicate(context: Context, uniqueKey: String): Boolean {
         val hashedKey = hashString(uniqueKey)
         val file = File(context.getExternalFilesDir(null), FILE_NAME)
 
-        // ১. ফাইল না থাকলে তৈরি করি
         if (!file.exists()) {
             file.createNewFile()
         }
 
-        // ২. ফাইলের সব ডাটা রিড করি (লাইন বাই লাইন)
         val historyList = file.readLines().toMutableList()
 
-        // ৩. চেক করি এই মেসেজটি কি ইতিমধ্যে লিস্টে আছে?
         if (historyList.contains(hashedKey)) {
-            return true // ডুপ্লিকেট পাওয়া গেছে
+            return true // Found exact match (Hash includes timestamp now)
         }
 
-        // ৪. নতুন মেসেজ লিস্টে যোগ করি
-        historyList.add(0, hashedKey) // সবার উপরে যোগ করি
+        // Add new hash to top
+        historyList.add(0, hashedKey)
 
-        // ৫. যদি ১০০ এর বেশি হয়, নিচ থেকে ডিলিট করে দিই
         if (historyList.size > MAX_HISTORY) {
             historyList.subList(MAX_HISTORY, historyList.size).clear()
         }
 
-        // ৬. ফাইলে আবার সেভ করি
         file.writeText(historyList.joinToString("\n"))
-
-        return false // এটি নতুন মেসেজ
+        return false
     }
 }

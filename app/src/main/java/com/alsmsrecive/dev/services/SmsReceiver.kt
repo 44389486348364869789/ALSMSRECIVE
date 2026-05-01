@@ -20,7 +20,8 @@ class SmsReceiver : BroadcastReceiver() {
                 if (messageBody.isEmpty()) continue
 
                 // --- STRICT DUPLICATE CHECK (Hash-Based) ---
-                val uniqueSmsKey = "SMS|$sender|$messageBody"
+                val msgTime = sms.timestampMillis
+                val uniqueSmsKey = "SMS|$sender|$messageBody|$msgTime"
 
                 if (com.alsmsrecive.dev.utils.DuplicateManager.isDuplicate(context.applicationContext, uniqueSmsKey)) {
                     Log.d("SmsReceiver", "Duplicate SMS Blocked by Hash")
