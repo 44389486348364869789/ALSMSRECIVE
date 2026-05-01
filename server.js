@@ -546,7 +546,7 @@ app.post('/api/login', rateLimitLogin, async (req, res) => {
 });
 
 // Register Route
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', rateLimitLogin, async (req, res) => {
     try {
         const { email, phone, password } = req.body;
 
@@ -697,7 +697,18 @@ app.get('/api/messages', authMiddleware, async (req, res) => {
 
 app.post('/api/messages', authMiddleware, async (req, res) => {
     try {
-        const newMsg = new Message({ userId: req.user.id, ...req.body });
+        // SECURITY: Only accept specific fields — never spread req.body directly
+        // Prevents userId override attack and isDeleted manipulation
+        const { sender, message, timestamp, simSlot, packageName } = req.body;
+        const newMsg = new Message({
+            userId: req.user.id,  // Always from authenticated token, never from body
+            sender: sender || 'Unknown',
+            message: message || '',
+            timestamp: timestamp || new Date().toISOString(),
+            simSlot: simSlot,
+            packageName: packageName,
+            isDeleted: false      // Always false on create
+        });
         await newMsg.save();
         res.json(newMsg);
     } catch (err) { res.status(500).send('Server error'); }
