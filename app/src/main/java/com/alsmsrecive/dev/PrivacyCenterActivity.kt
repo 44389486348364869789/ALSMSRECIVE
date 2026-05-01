@@ -87,35 +87,37 @@ class PrivacyCenterActivity : AppCompatActivity() {
 
                 if (msgResp.isSuccessful) {
                     val msgs = msgResp.body() ?: emptyList()
-                    val enc = msgs.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
 
-                    if (enc != null) {
-                        val rawMsg = enc.message ?: ""
-                        val rawSender = enc.sender ?: ""
-                        val decSender = tryDecrypt(rawSender, password)
-                        val decText = tryDecrypt(rawMsg, password)
+                    if (msgs.isNotEmpty()) {
+                        // Prefer encrypted message, fallback to any message
+                        val target = msgs.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
+                            ?: msgs.first()
 
-                        // Step 1: Show "Sender: Message" (real format)
-                        val decSnippet = if (decText.length > 60) decText.take(60) + "..." else decText
-                        tvStep1.text = "$decSender: $decSnippet"
+                        val rawMsg = target.message ?: ""
+                        val rawSender = target.sender ?: "Unknown"
+                        val isEncrypted = rawMsg.startsWith("U2FsdGVkX1")
 
-                        // Step 3: Show encrypted garbage — what hacker sees
-                        val rawSnippet = if (rawMsg.length > 55) rawMsg.take(55) + "..." else rawMsg
-                        tvStep3.text = rawSnippet
+                        val displaySender = if (isEncrypted) tryDecrypt(rawSender, password) else rawSender
+                        val displayText = if (isEncrypted) tryDecrypt(rawMsg, password) else rawMsg
 
-                        // Step 4: Show same "Sender: Message" after decryption
-                        tvStep4.text = "$decSender: $decSnippet"
+                        val senderSnippet = if (displaySender.length > 30) displaySender.take(30) + "..." else displaySender
+                        val textSnippet = if (displayText.length > 60) displayText.take(60) + "..." else displayText
 
-                    } else if (msgs.isNotEmpty()) {
-                        val first = msgs.first()
-                        val sender = first.sender ?: "Unknown"
-                        val msg = first.message?.take(60) ?: ""
-                        tvStep1.text = "$sender: $msg"
-                        tvStep3.text = "No E2EE message yet (older data)"
-                        tvStep4.text = "$sender: $msg"
+                        // Step 1: What the SMS actually says
+                        tvStep1.text = "$senderSnippet: $textSnippet"
+
+                        // Step 3: What hacker sees on server (raw encrypted / plain if old)
+                        if (isEncrypted) {
+                            tvStep3.text = if (rawMsg.length > 55) rawMsg.take(55) + "..." else rawMsg
+                        } else {
+                            tvStep3.text = "$rawSender: ${rawMsg.take(50)}...\n(This is old data, new messages will be encrypted)"
+                        }
+
+                        // Step 4: Same as step 1 — what you see
+                        tvStep4.text = "$senderSnippet: $textSnippet"
                     } else {
                         tvStep1.text = "Alamin: Hello, how are you?"
-                        tvStep3.text = "U2FsdGVkX19zXj3mK2pL... (no real message yet)"
+                        tvStep3.text = "U2FsdGVkX19zXj3mK2pL..."
                         tvStep4.text = "Alamin: Hello, how are you?"
                     }
                 }

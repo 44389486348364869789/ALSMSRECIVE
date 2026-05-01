@@ -126,19 +126,10 @@ const authMiddleware = async (req, res, next) => {
         if (!user) return res.status(401).json({ msg: 'User not found' });
         if (user.isBlocked) return res.status(403).json({ msg: 'Your account has been blocked.' });
 
-        // প্ল্যান চেক (অ্যাডমিন বাদে)
+        // Plan check (skip for admin)
         if (user.role !== 'admin') {
             if (user.planExpiresAt && new Date() > new Date(user.planExpiresAt)) {
                 return res.status(402).json({ msg: 'Plan Expired! Please renew subscription.' });
-            }
-
-            // সেশন ভেরিফিকেশন (x-device-id)
-            const deviceId = req.header('x-device-id');
-            if (deviceId && user.activeSessions) {
-                const sessionExists = user.activeSessions.some(s => s.deviceId === deviceId);
-                if (!sessionExists) {
-                    return res.status(401).json({ msg: 'Device session expired. Please log in again.' });
-                }
             }
         }
 

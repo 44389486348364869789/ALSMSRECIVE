@@ -48,7 +48,7 @@
     <item
         android:id="@+id/menu_privacy"
         android:title="Privacy &amp; E2EE Proof"
-        android:icon="@drawable/ic_verified_shield" />
+        android:icon="@android:drawable/ic_lock_lock" />
 
     <item
         android:id="@+id/menu_help"
