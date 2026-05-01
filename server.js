@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -170,7 +170,11 @@ const authMiddleware = async (req, res, next) => {
     if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            console.error('[CRITICAL] JWT_SECRET not set in .env! Using insecure fallback.');
+        }
+        const decoded = jwt.verify(token, jwtSecret || 'your_default_secret');
         const user = await User.findById(decoded.user.id);
         
         if (!user) return res.status(401).json({ msg: 'User not found' });
@@ -206,9 +210,7 @@ const adminAuthMiddleware = (req, res, next) => {
 
 // Webhook for receiving SMS from the external app
 app.post('/api/webhook/sms', async (req, res) => {
-    console.log("\n--- [WEBHOOK] INCOMING SMS DATA ---");
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
+    // NOTE: Do NOT log full headers/body — secret_key would be exposed in logs
     
     try {
         // The external app sends structured JSON data directly
@@ -363,7 +365,7 @@ app.post('/api/plans/verify-order', authMiddleware, async (req, res) => {
 
         const order = await Order.findById(orderId);
         if (!order) return res.status(404).json({ msg: "Order not found" });
-        if (order.userId !== req.user._id.toString()) return res.status(403).json({ msg: "Unauthorized order access" });
+        if (order.userId.toString() !== req.user._id.toString()) return res.status(403).json({ msg: "Unauthorized order access" });
         if (order.status !== 'pending') return res.status(400).json({ msg: "Order is already " + order.status });
         if (new Date() > new Date(order.expiresAt)) {
             order.status = 'expired';

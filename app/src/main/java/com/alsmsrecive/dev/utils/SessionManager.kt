@@ -78,13 +78,17 @@ class SessionManager(context: Context) {
     }
 
     fun clearAuthToken() {
-        // লগআউট হলে টেলিগ্রাম এবং অ্যাপ সিলেকশন ডেটাও মুছে ফেলা উচিত
         sharedPreferences.edit()
             .remove(AUTH_TOKEN)
             .remove(TELEGRAM_BOT_TOKEN)
             .remove(TELEGRAM_CHAT_ID)
-            .remove(SELECTED_APP_PACKAGES) // <-- এটিও ক্লিয়ার করুন
-            .remove(LOGIN_PASSWORD) // পাসওয়ার্ড মুছে ফেলা
+            .remove(SELECTED_APP_PACKAGES)
+            .remove(LOGIN_PASSWORD)
+            .remove(USER_EMAIL)       // Clear on logout — prevent stale identifier
+            .remove(USER_PHONE)       // Clear on logout — prevent stale identifier
+            .remove(PLAN_EXPIRY)
+            .remove(DEVICE_LIMIT)
+            .remove(ACTIVE_SESSIONS)
             .apply()
     }
 
