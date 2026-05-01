@@ -150,7 +150,7 @@
                             </LinearLayout>
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1. SMS Arrives" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
-                                <TextView android:id="@+id/tvStep1Raw" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Waiting..." android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
+                                <TextView android:id="@+id/tvStep1Raw" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Waiting for data..." android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
                             </LinearLayout>
                         </LinearLayout>
 
@@ -177,9 +177,9 @@
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_cloud_server" app:tint="#F87171"/>
                             </LinearLayout>
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
-                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. Server-এ এভাবে জমা হয়" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3. Stored on Server — What Hacker Sees" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
                                 <TextView android:id="@+id/tvStep3Cipher" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="U2FsdGVkX1..." android:textColor="#F87171" android:textSize="12sp" android:fontFamily="monospace"/>
-                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="সার্ভার বা হ্যাকার কেউই এটা পড়তে পারবে না" android:textColor="#94A3B8" android:textSize="11sp"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Even if a hacker steals this, they cannot read it." android:textColor="#94A3B8" android:textSize="11sp"/>
                             </LinearLayout>
                         </LinearLayout>
 
@@ -192,9 +192,9 @@
                                 <ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_verified_shield" app:tint="#22C55E"/>
                             </LinearLayout>
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
-                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4. আপনি যা দেখেন (Decrypted)" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4. You See (After Decryption)" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
                                 <TextView android:id="@+id/tvStep4Decrypted" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Decrypting..." android:textColor="#22C55E" android:textSize="12sp"/>
-                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="শুধু আপনি এটা পড়তে পারবেন" android:textColor="#94A3B8" android:textSize="11sp"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Only you can read this — decrypted locally on your device." android:textColor="#94A3B8" android:textSize="11sp"/>
                             </LinearLayout>
                         </LinearLayout>
 

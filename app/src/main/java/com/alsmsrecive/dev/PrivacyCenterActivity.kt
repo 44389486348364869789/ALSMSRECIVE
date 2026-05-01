@@ -90,21 +90,33 @@ class PrivacyCenterActivity : AppCompatActivity() {
                     val enc = msgs.firstOrNull { it.message?.startsWith("U2FsdGVkX1") == true }
 
                     if (enc != null) {
-                        val raw = enc.message ?: ""
-                        val decSender = tryDecrypt(enc.sender ?: "", password)
-                        val decText = tryDecrypt(raw, password)
+                        val rawMsg = enc.message ?: ""
+                        val rawSender = enc.sender ?: ""
+                        val decSender = tryDecrypt(rawSender, password)
+                        val decText = tryDecrypt(rawMsg, password)
 
-                        tvStep1.text = "From: $decSender (actual SMS)"
-                        tvStep3.text = if (raw.length > 55) raw.take(55) + "..." else raw
-                        tvStep4.text = if (decText.length > 80) decText.take(80) + "..." else decText
+                        // Step 1: Show "Sender: Message" (real format)
+                        val decSnippet = if (decText.length > 60) decText.take(60) + "..." else decText
+                        tvStep1.text = "$decSender: $decSnippet"
+
+                        // Step 3: Show encrypted garbage — what hacker sees
+                        val rawSnippet = if (rawMsg.length > 55) rawMsg.take(55) + "..." else rawMsg
+                        tvStep3.text = rawSnippet
+
+                        // Step 4: Show same "Sender: Message" after decryption
+                        tvStep4.text = "$decSender: $decSnippet"
+
                     } else if (msgs.isNotEmpty()) {
-                        tvStep1.text = "From: ${msgs.first().sender ?: "Unknown"}"
-                        tvStep3.text = "No E2EE msg yet (old data)"
-                        tvStep4.text = msgs.first().message?.take(80) ?: "-"
+                        val first = msgs.first()
+                        val sender = first.sender ?: "Unknown"
+                        val msg = first.message?.take(60) ?: ""
+                        tvStep1.text = "$sender: $msg"
+                        tvStep3.text = "No E2EE message yet (older data)"
+                        tvStep4.text = "$sender: $msg"
                     } else {
-                        tvStep1.text = "No messages yet"
-                        tvStep3.text = "Send an SMS to see proof"
-                        tvStep4.text = "Waiting for first message..."
+                        tvStep1.text = "Alamin: Hello, how are you?"
+                        tvStep3.text = "U2FsdGVkX19zXj3mK2pL... (no real message yet)"
+                        tvStep4.text = "Alamin: Hello, how are you?"
                     }
                 }
 
