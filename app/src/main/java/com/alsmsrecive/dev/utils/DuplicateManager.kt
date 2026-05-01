@@ -16,6 +16,8 @@ object DuplicateManager {
         } catch (e: Exception) {
             input // Fallback
         }
+    }
+
     fun isDuplicate(context: Context, uniqueKey: String): Boolean {
         val hashedKey = hashString(uniqueKey)
         val file = File(context.getExternalFilesDir(null), FILE_NAME)
