@@ -697,22 +697,26 @@ app.get('/api/messages', authMiddleware, async (req, res) => {
 
 app.post('/api/messages', authMiddleware, async (req, res) => {
     try {
-        // SECURITY: Only accept specific fields — never spread req.body directly
-        // Prevents userId override attack and isDeleted manipulation
-        const { sender, message, timestamp, simSlot, packageName } = req.body;
+        // SECURITY: Explicitly extract known fields — prevents userId override attack
+        // App sends: type, sender, message, deviceId, deviceName, timestamp
+        const { type, sender, message, deviceId, deviceName, timestamp, simSlot, packageName } = req.body;
         const newMsg = new Message({
-            userId: req.user.id,  // Always from authenticated token, never from body
+            userId: req.user.id,        // Always from auth token — never from body
+            type: type || 'sms',
             sender: sender || 'Unknown',
             message: message || '',
+            deviceId: deviceId || 'unknown',
+            deviceName: deviceName || 'Unknown Device',
             timestamp: timestamp || new Date().toISOString(),
             simSlot: simSlot,
             packageName: packageName,
-            isDeleted: false      // Always false on create
+            isDeleted: false            // Always false on create
         });
         await newMsg.save();
         res.json(newMsg);
     } catch (err) { res.status(500).send('Server error'); }
 });
+
 
 app.post('/api/call-logs/sync', authMiddleware, async (req, res) => {
     try {
