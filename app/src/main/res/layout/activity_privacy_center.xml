@@ -172,7 +172,7 @@
                             </LinearLayout>
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2. Encrypted on Device" android:textColor="?attr/colorOnSurface" android:textSize="14sp" android:textStyle="bold"/>
-                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your password encrypts the message locally" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your password encrypts the message locally on your device" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp"/>
                             </LinearLayout>
                         </LinearLayout>
 
