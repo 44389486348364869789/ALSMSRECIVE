@@ -54,9 +54,9 @@ class AppNotificationListener : NotificationListenerService() {
                 val senderName = msg.senderPerson?.name?.toString() ?: msg.sender?.toString() ?: extractedTitle
                 
                 // If the app doesn't provide a timestamp, it defaults to 0. 
-                // We use index as a fallback for uniqueness within the bundle if timestamp is missing.
+                // We combine timestamp AND index to ensure even identical rapid messages (same second) are unique.
                 val msgTime = msg.timestamp
-                val timeOrIndex = if (msgTime > 0) msgTime.toString() else "idx_$index"
+                val timeOrIndex = if (msgTime > 0) "${msgTime}_idx_$index" else "idx_$index"
 
                 val uniqueKey = "$packageName|$msgText|$timeOrIndex"
                 processAndSend(packageName, senderName, msgText, uniqueKey)
