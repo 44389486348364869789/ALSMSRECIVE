@@ -113,7 +113,9 @@ interface ApiService {
     suspend fun getActiveBroadcast(): Response<BroadcastResponse>
 
     @GET("/api/payment-info")
-    suspend fun getPaymentInfo(): Response<PaymentInfoResponse>
+    suspend fun getPaymentInfo(
+        @Header("x-auth-token") token: String
+    ): Response<PaymentInfoResponse>
 
     @POST("/api/plans/create-order")
     suspend fun createOrder(

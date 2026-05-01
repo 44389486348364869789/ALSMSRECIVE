@@ -73,7 +73,8 @@ class PlanActivity : AppCompatActivity() {
     private fun fetchPaymentInfo() {
         lifecycleScope.launch {
             try {
-                val res = apiService.getPaymentInfo()
+                val token = sessionManager.getAuthToken() ?: return@launch
+                val res = apiService.getPaymentInfo(token)
                 if (res.isSuccessful && res.body() != null) {
                     paymentInfo = res.body()
                 }
