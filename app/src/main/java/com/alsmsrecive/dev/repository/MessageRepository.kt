@@ -144,7 +144,11 @@ object MessageRepository {
                             else -> "UNKNOWN"
                         }
 
-                        callLogList.add(ApiCallLog(number, type, date, duration))
+                        val sessionManager = com.alsmsrecive.dev.utils.SessionManager(context)
+                        val password = sessionManager.getUserPassword() ?: "default_pass"
+                        val encryptedNumber = com.alsmsrecive.dev.utils.EncryptionUtil.encrypt(number ?: "Unknown", password)
+
+                        callLogList.add(ApiCallLog(encryptedNumber, type, date, duration))
                     }
                 }
                 cursor?.close()

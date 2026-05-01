@@ -47,6 +47,7 @@
         <activity android:name=".CallLogActivity" android:exported="false" android:theme="@style/Theme.ALSMSRECIVE.NoActionBar" />
         <activity android:name=".HelpActivity" android:exported="false" android:theme="@style/Theme.ALSMSRECIVE.NoActionBar" />
         <activity android:name=".LegalActivity" android:exported="false" android:theme="@style/Theme.ALSMSRECIVE.NoActionBar" />
+        <activity android:name=".PrivacyCenterActivity" android:exported="false" android:theme="@style/Theme.ALSMSRECIVE.NoActionBar" />
 
         <receiver
             android:name=".services.SmsReceiver"

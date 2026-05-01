@@ -220,6 +220,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.menu_telegram_settings -> { startActivity(Intent(this, TelegramSettingsActivity::class.java)); true }
                 R.id.menu_trash -> { startActivity(Intent(this, TrashActivity::class.java)); true }
                 R.id.menu_clear_all -> { confirmDeleteAllMessages_First(); true }
+                R.id.menu_privacy -> { startActivity(Intent(this, PrivacyCenterActivity::class.java)); true }
                 R.id.menu_help -> { startActivity(Intent(this, HelpActivity::class.java)); true }
                 R.id.menu_logout -> { handleLogout(); true }
                 else -> false

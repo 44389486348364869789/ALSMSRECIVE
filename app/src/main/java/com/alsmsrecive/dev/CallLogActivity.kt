@@ -59,8 +59,17 @@ class CallLogActivity : AppCompatActivity() {
                 // নতুন API কল করা হচ্ছে
                 val response = apiService.getCallLogs(token)
                 if (response.isSuccessful) {
+                    val rawLogs = response.body() ?: emptyList()
+                    val password = sessionManager.getUserPassword() ?: "default_pass"
+                    
+                    val decryptedLogs = rawLogs.map { log ->
+                        if (log.number.startsWith("U2FsdGVkX1")) {
+                            log.copy(number = com.alsmsrecive.dev.utils.EncryptionUtil.decrypt(log.number, password))
+                        } else log
+                    }
+
                     callLogList.clear()
-                    callLogList.addAll(response.body() ?: emptyList())
+                    callLogList.addAll(decryptedLogs)
                     callLogAdapter.notifyDataSetChanged()
                     if (callLogList.isEmpty()) {
                         showToast("No call logs found on server.")
